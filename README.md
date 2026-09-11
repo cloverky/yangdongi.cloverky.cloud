@@ -165,10 +165,10 @@
       <a href="https://github.com/Leejungs">GitHub</a>
     </td>
     <td align="center" width="150">
-      <img src="https://github.com/soyeonprincesss.png" width="100" height="100" style="border-radius:50%;">
+      <img src="https://github.com/cloverky.png" width="100" height="100" style="border-radius:50%;">
       <br><b>박소연</b><br>
       Backend<br>
-      <a href="https://github.com/soyeonprincesss">GitHub</a>
+      <a href="https://github.com/cloverky">GitHub</a>
     </td>
     <td align="center" width="150">
       <img src="https://github.com/thdnjs0730.png" width="100" height="100" style="border-radius:50%;">
