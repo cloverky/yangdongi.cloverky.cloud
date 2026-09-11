@@ -32,6 +32,15 @@ DB_NAME = os.getenv("DB_NAME", "test")
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
 PORT = int(os.getenv("PORT", "8001"))
+DEBUG = os.getenv("FLASK_DEBUG", "0") == "1"
+
+# 기본값/빈값이면 세션 위조가 가능하거나(전자) 세션 자체가 죽는다(후자).
+# .env에 키가 비어 있어도 os.getenv는 기본값이 아니라 ""를 돌려주므로 길이까지 본다.
+if not DEBUG and (SECRET_KEY == "dev-secret" or len(SECRET_KEY) < 32):
+    raise RuntimeError(
+        "SECRET_KEY가 비어 있거나 너무 짧습니다(32자 이상 필요). .env에 무작위 값을 설정하세요.\n"
+        "  python -c \"import secrets; print(secrets.token_hex(32))\""
+    )
 FASTAPI_BASE = os.getenv("FASTAPI_BASE", "http://127.0.0.1:9000")
 CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
 
@@ -48,11 +57,14 @@ app = Flask(__name__, static_folder="image", static_url_path="/image")
 app.secret_key = SECRET_KEY
 app.permanent_session_lifetime = timedelta(days=7)
 
-# ✅ 세션 쿠키 설정 (iPhone/Safari 호환)
+# 세션 쿠키 설정
+# SameSite=None은 브라우저가 Secure를 요구하므로 HTTPS 배포에서만 쓴다.
+# 로컬(http)에서는 Lax + Secure=False라야 쿠키가 저장된다.
 app.config.update(
     JSON_AS_ASCII=False,
-    SESSION_COOKIE_SAMESITE="None",
-    SESSION_COOKIE_SECURE=False
+    SESSION_COOKIE_SAMESITE=os.getenv("SESSION_COOKIE_SAMESITE", "Lax"),
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "0") == "1",
+    SESSION_COOKIE_HTTPONLY=True,
 )
 
 CORS(
@@ -250,7 +262,8 @@ def login():
 
     cur.close()
     conn.close()
-    return jsonify(ok=True, user=user)
+    # user는 DB 행 전체라 password_hash가 들어 있다. 세션에 담은 안전한 필드만 돌려준다.
+    return jsonify(ok=True, user=dict(session))
 
 @app.post("/api/logout")
 def logout():
@@ -881,7 +894,7 @@ def department_list():
 
     try:
         # ✅ MongoDB Atlas 연결
-        client = MongoClient("mongodb+srv://wjdtndpdy0920:dlwjd09tn20@cluster0.zsdkexf.mongodb.net/")
+        client = MongoClient(os.getenv("MONGO_DEPT_URI") or os.getenv("MONGO_URI"))
         db = client["depatement_all_db"]   # ✅ 오타 수정됨
         col = db["department"]              # ✅ 컬렉션 이름 확인
 
@@ -938,7 +951,7 @@ def department_detail(name):
 
     try:
         name = unquote(name).strip()  # ✅ 한글 URL + 공백 정리
-        client = MongoClient("mongodb+srv://wjdtndpdy0920:dlwjd09tn20@cluster0.zsdkexf.mongodb.net/")
+        client = MongoClient(os.getenv("MONGO_DEPT_URI") or os.getenv("MONGO_URI"))
         db = client["depatement_all_db"]
         col = db["department"]
 
@@ -1049,5 +1062,6 @@ def feature_page():
 if __name__ == "__main__":
     init_db()
     print(f"🚀 Flask 서버 실행 중: http://127.0.0.1:{PORT}")
-    app.run(host="0.0.0.0", port=8001, debug=True)
+    # debug=True는 Werkzeug 디버거를 노출해 원격 코드 실행이 가능하다. 기본은 끔.
+    app.run(host="0.0.0.0", port=PORT, debug=DEBUG)
 
