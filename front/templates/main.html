@@ -408,7 +408,9 @@ body.chatting .tiles {
   display: none;
   justify-content: center;
   align-items: center;
-  z-index: 300;
+  /* 채팅바(.assistant-wrap, .chat-box)가 z-index 9999라 그보다 위여야
+     모달 하단 버튼이 가려지지 않는다 */
+  z-index: 10000;
   animation: fadeIn 0.3s ease;
 }
 
