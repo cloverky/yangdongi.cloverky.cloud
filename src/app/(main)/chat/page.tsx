@@ -72,7 +72,7 @@ export default function ChatPage() {
         transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)"
       }}>
         {/* 로고 */}
-        <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"8px 10px 14px 8px", borderBottom:"1px solid rgba(255,255,255,.18)", marginBottom:"12px" }}>
+        <div onClick={() => { setView("home"); setActiveKey("today"); }} style={{ display:"flex", alignItems:"center", gap:"10px", padding:"8px 10px 14px 8px", borderBottom:"1px solid rgba(255,255,255,.18)", marginBottom:"12px", cursor:"pointer" }}>
           <div style={{ width:"42px", height:"42px", borderRadius:"50%", background:"#fff", display:"grid", placeItems:"center", overflow:"hidden", flexShrink:0 }}>
             <Image src="/image/yangdongi.png" alt="양동이" width={72} height={72} style={{ objectFit:"contain", outline:"none" }} />
           </div>
