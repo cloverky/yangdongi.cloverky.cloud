@@ -202,13 +202,13 @@ export default function ChatPage() {
 
       {/* 양동이 캐릭터 + 입력창 (하단 고정) */}
       <div style={{
-        position:"fixed", bottom:"20px",
+        position:"fixed", bottom:"100px",
         left:`calc(${sbW}px + (100vw - ${sbW}px) / 2 - 120px)`,
         transform:"translateX(-50%)",
         display:"flex", alignItems:"flex-end", zIndex:9999, pointerEvents:"auto"
       }}>
-        <Image src="/image/yangdongi.png" alt="양동이" width={260} height={260}
-          style={{ objectFit:"contain", filter:"drop-shadow(0 12px 18px rgba(0,0,0,.22))", pointerEvents:"none", position:"relative", top:"80px", marginRight:"-80px" }} />
+        <Image src="/image/yangdongi.png" alt="양동이" width={300} height={300}
+          style={{ objectFit:"contain", filter:"drop-shadow(0 12px 18px rgba(0,0,0,.22))", pointerEvents:"none", position:"relative", top:"100px", marginRight:"-90px" }} />
         <div style={{
           height:"64px", display:"grid", gridTemplateColumns:"auto 1fr auto",
           alignItems:"center", gap:"10px",
