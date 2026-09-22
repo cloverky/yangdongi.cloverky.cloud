@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  uid          String    @unique @db.VarChar(64)
+  role         String    @default("user") @db.VarChar(20)
+  name         String    @db.VarChar(100)
+  department   String    @db.VarChar(100)
+  email        String    @db.VarChar(150)
+  passwordHash String    @db.VarChar(200)
+  createdAt    DateTime  @default(now())
+  chatLogs     ChatLog[]
+
+  @@map("users")
+}
+
+model Student {
+  studentId     String          @id @db.VarChar(20)
+  pw            String          @db.VarChar(255)
+  name          String          @db.VarChar(50)
+  grade         Int
+  department    String          @db.VarChar(100)
+  status        StudentStatus   @default(ENROLLED)
+  enrollments   StudentClass[]
+  schedule      StudentSchedule?
+
+  @@map("student")
+}
+
+enum StudentStatus {
+  ENROLLED
+  LEAVE
+}
+
+model Faculty {
+  id          Int          @id @default(autoincrement())
+  name        String       @db.VarChar(100)
+  departments Department[]
+
+  @@map("faculty")
+}
+
+model Department {
+  id            Int     @id @default(autoincrement())
+  facultyId     Int
+  name          String  @db.VarChar(100)
+  programLength String  @db.VarChar(10)
+  faculty       Faculty @relation(fields: [facultyId], references: [id])
+
+  @@map("department")
+}
+
+model Class {
+  id           Int            @id @default(autoincrement())
+  subject      String         @db.VarChar(100)
+  major        String         @db.VarChar(50)
+  professor    String         @db.VarChar(50)
+  classroom    String         @db.VarChar(20)
+  hoursPerWeek Int
+  credit       Int
+  courseType   String         @db.VarChar(20)
+  schedule     String         @db.VarChar(50)
+  semester     String         @db.VarChar(10)
+  year         Int            @default(2025)
+  enrollments  StudentClass[]
+
+  @@map("class")
+}
+
+model StudentClass {
+  id        Int      @id @default(autoincrement())
+  studentId String   @db.VarChar(20)
+  classId   Int
+  year      Int
+  semester  Int
+  grade     String?  @db.VarChar(5)
+  createdAt DateTime @default(now())
+  schedule  String?  @db.VarChar(50)
+  student   Student  @relation(fields: [studentId], references: [studentId])
+  class     Class    @relation(fields: [classId], references: [id])
+
+  @@map("student_class")
+}
+
+model StudentSchedule {
+  studentId  String  @id @db.VarChar(10)
+  name       String  @db.VarChar(20)
+  result     String? @db.VarChar(5)
+  classSection String? @db.VarChar(10)
+  slots      Json
+  student    Student @relation(fields: [studentId], references: [studentId])
+
+  @@map("student_schedule")
+}
+
+model Assignment {
+  id          Int       @id @default(autoincrement())
+  subjectName String    @db.VarChar(100)
+  title       String    @db.VarChar(255)
+  dueDate     DateTime
+  status      String?   @db.VarChar(20)
+  score       String?   @db.VarChar(20)
+  createdAt   DateTime  @default(now())
+
+  @@map("assignments")
+}
+
+model ChatLog {
+  id        Int      @id @default(autoincrement())
+  uid       String   @db.VarChar(50)
+  message   String
+  speaker   Speaker
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [uid], references: [uid])
+
+  @@map("chat_logs")
+}
+
+enum Speaker {
+  user
+  bot
+}
+
+model Notice {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String?
+  category  String?  @db.VarChar(50)
+  url       String?
+  postedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@map("notices")
+}
+
+model CampusPlace {
+  id          Int    @id @default(autoincrement())
+  name        String @db.VarChar(100)
+  description String?
+  building    String? @db.VarChar(50)
+  floor       String? @db.VarChar(20)
+  extra       Json?
+
+  @@map("campus_place")
+}
+
+model DepartmentDetail {
+  id          Int    @id @default(autoincrement())
+  name        String @unique @db.VarChar(100)
+  curriculum  Json?
+  professors  Json?
+  clubs       Json?
+
+  @@map("department_detail")
+}
+
+model Healthcheck {
+  id Int      @id @default(autoincrement())
+  ts DateTime @default(now())
+
+  @@map("healthcheck")
+}
