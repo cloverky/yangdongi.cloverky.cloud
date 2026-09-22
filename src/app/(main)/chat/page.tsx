@@ -6,24 +6,23 @@ import Image from "next/image";
 
 interface Msg { role: "user" | "bot"; text: string; }
 
-const BRAND = "#1565d8";
-
 const TILES = [
-  { key:"timetable", icon:"📅", label:"수업 시간표" },
-  { key:"grades",    icon:"📊", label:"학점 조회" },
-  { key:"cert",      icon:"📋", label:"자격증 안내" },
-  { key:"notices",   icon:"📢", label:"공지사항" },
-  { key:"assignments",icon:"📝", label:"eClass 과제" },
-  { key:"campus",    icon:"🏫", label:"캠퍼스 안내" },
+  { key:"timetable",   icon:"🗓️", label:"수업 시간표",    sub:"이번 주 수업 및 강의실" },
+  { key:"cert",        icon:"📋", label:"자격증 안내",    sub:"관련 자격증 / 시험 일정" },
+  { key:"grades",      icon:"📊", label:"학점 조회",      sub:"누적 / 학기별 성적" },
+  { key:"assignments", icon:"🖥️", label:"eClass",         sub:"과제 현황" },
+  { key:"notices",     icon:"📢", label:"공지사항",       sub:"학교 공지사항 / 학과 공지사항" },
+  { key:"graduation",  icon:"🎓", label:"졸업 학점 이수", sub:"전공 / 교양 이수체크" },
 ];
 
 export default function ChatPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [msgs, setMsgs] = useState<Msg[]>([{ role:"bot", text:"안녕하세요! 동양미래대학교 챗봇 양동이입니다 🪣\n무엇이든 물어보세요!" }]);
+  const [msgs, setMsgs] = useState<Msg[]>([{ role:"bot", text:"안녕! 난 양동이야. 어떤 점이 궁금해?" }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<"home"|"chat">("home");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status]);
@@ -47,113 +46,171 @@ export default function ChatPage() {
   }
 
   if (status === "loading") return null;
-
-  const user = session?.user as { name?: string; role?: string } | undefined;
+  const user = session?.user as { name?: string; uid?: string; department?: string; role?: string } | undefined;
+  const todayStr = new Date().toLocaleDateString("ko-KR", { year:"numeric", month:"long", day:"numeric", weekday:"short" });
+  const sbW = sidebarOpen ? 260 : 0;
 
   return (
-    <div style={{ display:"flex", height:"100vh", fontFamily:"'Noto Sans KR',sans-serif", background:"#f3f6fb" }}>
+    <div style={{ display:"flex", height:"100vh", fontFamily:"'Noto Sans KR',sans-serif", background:"#f3f6fb", overflow:"hidden" }}>
+
       {/* 사이드바 */}
-      <aside style={{ width:"260px", background:"#fff", borderRight:"1px solid #e5e7eb", display:"flex", flexDirection:"column", padding:"20px 0" }}>
-        <div style={{ padding:"0 20px 20px", borderBottom:"1px solid #e5e7eb" }}>
-          <Image src="/image/logo.png" alt="로고" width={160} height={36} style={{ objectFit:"contain" }} />
+      <aside style={{
+        position:"fixed", inset:"0 auto 0 0", width:"260px", height:"100vh",
+        background:"linear-gradient(180deg,#1565d8,#0f4aa4)",
+        color:"#fff", display:"flex", flexDirection:"column", padding:"18px 14px",
+        transition:"transform .25s ease", zIndex:50,
+        transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)"
+      }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"8px 10px 14px 8px", borderBottom:"1px solid rgba(255,255,255,.18)", marginBottom:"12px" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"10px", fontWeight:700, fontSize:"18px" }}>
+            <Image src="/image/yangdongi.png" alt="양동이" width={28} height={28} style={{ borderRadius:"50%", background:"#fff" }} />
+            <span>양동이</span>
+          </div>
         </div>
-        <div style={{ padding:"16px 12px", flex:1 }}>
-          <button onClick={() => { setView("home"); setMsgs([{ role:"bot", text:"안녕하세요! 무엇이든 물어보세요!" }]); }}
-            style={sideBtn}>🆕 새 채팅</button>
-          <button onClick={() => setView("chat")} style={sideBtn}>💬 채팅</button>
-          <button onClick={() => window.open("https://www.dongyang.ac.kr")} style={sideBtn}>🏫 학교 홈페이지</button>
-        </div>
-        <div style={{ padding:"16px 12px", borderTop:"1px solid #e5e7eb" }}>
-          <p style={{ fontSize:"13px", color:"#6b7280", padding:"0 8px", marginBottom:"8px" }}>{user?.name ?? ""} ({user?.role === "student" ? "학생" : "교직원"})</p>
-          <button onClick={() => signOut({ callbackUrl:"/login" })} style={{ ...sideBtn, color:"#ef4444" }}>로그아웃</button>
+
+        <nav style={{ display:"flex", flexDirection:"column", gap:"6px", padding:"10px 0", flex:1 }}>
+          {[
+            { icon:"💬", label:"새 채팅", onClick:() => { setView("home"); setMsgs([{ role:"bot", text:"안녕! 난 양동이야. 어떤 점이 궁금해?" }]); } },
+            { icon:"🏠", label:"메인페이지", onClick:() => setView("home") },
+            { icon:"📚", label:"학교 홈페이지", onClick:() => window.open("https://www.dongyang.ac.kr/dmu/index.do") },
+          ].map((item, i) => (
+            <button key={i} onClick={item.onClick} style={{
+              display:"flex", alignItems:"center", gap:"10px", padding:"12px", borderRadius:"10px",
+              color:"#eaf2ff", background:"none", border:"none", cursor:"pointer", textAlign:"left", fontSize:"14px",
+              transition:"background .18s"
+            }}
+            onMouseOver={e => (e.currentTarget.style.background="rgba(255,255,255,.14)")}
+            onMouseOut={e => (e.currentTarget.style.background="none")}>
+              <span style={{ width:"22px", height:"22px", display:"grid", placeItems:"center", background:"rgba(255,255,255,.18)", borderRadius:"8px", fontSize:"13px" }}>{item.icon}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"10px 12px", borderTop:"1px solid rgba(255,255,255,.18)", marginTop:"auto" }}>
+          <div style={{ width:"36px", height:"36px", borderRadius:"50%", background:"rgba(255,255,255,.2)", display:"grid", placeItems:"center", fontSize:"16px", flexShrink:0 }}>👤</div>
+          <div style={{ fontSize:"13px", flex:1, overflow:"hidden" }}>
+            <div style={{ fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user?.name ?? "사용자"}</div>
+            <div style={{ opacity:.8, fontSize:"12px" }}>{user?.role === "student" ? "학생" : "교직원"}</div>
+          </div>
+          <button onClick={() => signOut({ callbackUrl:"/login" })} style={{ background:"rgba(255,255,255,.15)", border:"none", borderRadius:"8px", color:"#fff", fontSize:"12px", padding:"6px 10px", cursor:"pointer" }}>
+            로그아웃
+          </button>
         </div>
       </aside>
 
       {/* 메인 */}
-      <main style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
-        {/* 헤더 */}
-        <header style={{ background:"#fff", borderBottom:"1px solid #e5e7eb", padding:"16px 28px", display:"flex", alignItems:"center", gap:"12px" }}>
-          <span style={{ fontSize:"24px" }}>🪣</span>
-          <div>
-            <h1 style={{ fontSize:"18px", fontWeight:"bold", color:BRAND }}>양동이</h1>
-            <p style={{ fontSize:"12px", color:"#9ca3af" }}>동양미래대학교 학사 AI</p>
+      <main style={{ minHeight:"100vh", display:"flex", flexDirection:"column", marginLeft: sidebarOpen ? "260px" : "0", transition:"margin-left .25s ease", flex:1, overflow:"hidden" }}>
+
+        {/* 상단바 */}
+        <header style={{
+          height:"64px", background:"#fff", boxShadow:"0 8px 24px rgba(0,0,0,.06)",
+          padding:"0 16px", display:"flex", alignItems:"center", gap:"8px", justifyContent:"space-between",
+          position:"sticky", top:0, zIndex:60
+        }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+            <button onClick={() => setSidebarOpen(v => !v)} style={{
+              border:"none", background:"transparent", width:"40px", height:"40px", borderRadius:"10px",
+              fontSize:"18px", cursor:"pointer", display:"grid", placeItems:"center", color:"#1f2a37"
+            }}>☰</button>
+            <span style={{ fontWeight:700, fontSize:"18px" }}>양동이 챗봇 1.0</span>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:"12px", color:"#6b7280", fontSize:"14px" }}>
+            <span>{todayStr}</span>
           </div>
         </header>
 
-        {view === "home" ? (
-          /* 홈 — 6개 타일 */
-          <div style={{ flex:1, overflowY:"auto", padding:"32px 28px" }}>
-            <h2 style={{ fontSize:"22px", fontWeight:"bold", marginBottom:"24px", color:"#1f2a37" }}>안녕하세요, {user?.name ?? ""}님 👋</h2>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"16px", marginBottom:"32px" }}>
-              {TILES.map(t => (
-                <button key={t.key} onClick={() => send(`${t.label} 알려줘`)}
-                  style={{ background:"#fff", border:"1px solid #e5e7eb", borderRadius:"12px", padding:"24px 20px", textAlign:"left", cursor:"pointer", boxShadow:"0 2px 8px rgba(0,0,0,0.05)", transition:"box-shadow .2s" }}
-                  onMouseOver={e => (e.currentTarget.style.boxShadow="0 4px 16px rgba(21,101,216,0.15)")}
-                  onMouseOut={e => (e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.05)")}>
-                  <span style={{ fontSize:"28px" }}>{t.icon}</span>
-                  <p style={{ margin:"10px 0 0", fontWeight:"600", fontSize:"15px", color:"#1f2a37" }}>{t.label}</p>
-                </button>
-              ))}
+        {/* 콘텐츠 */}
+        <div style={{ flex:1, overflowY:"auto", padding:"32px", paddingBottom:"180px", position:"relative" }}>
+          {view === "home" && (
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"center" }}>
+              <div style={{
+                width:"min(1200px, 92%)", margin:"0 auto",
+                background:"#f7faff", borderRadius:"24px",
+                boxShadow:"inset 0 10px 18px rgba(0,0,0,.03), 0 18px 40px rgba(23,57,132,.08)",
+                padding:"38px 36px"
+              }}>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"18px" }}>
+                  {TILES.map(t => (
+                    <button key={t.key} onClick={() => send(`${t.label} 알려줘`)} style={{
+                      background:"#f9fbff", borderRadius:"18px", padding:"28px 24px",
+                      boxShadow:"0 3px 0 #e3ecff inset, 0 8px 24px rgba(0,0,0,.06)",
+                      display:"flex", gap:"14px", alignItems:"center", cursor:"pointer",
+                      border:"none", textAlign:"left", transition:"transform .12s ease, box-shadow .12s ease"
+                    }}
+                    onMouseOver={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 10px 28px rgba(0,0,0,.08)"; }}
+                    onMouseOut={e => { e.currentTarget.style.transform=""; e.currentTarget.style.boxShadow="0 3px 0 #e3ecff inset, 0 8px 24px rgba(0,0,0,.06)"; }}>
+                      <div style={{ width:"56px", height:"56px", borderRadius:"14px", display:"grid", placeItems:"center", background:"#e9f1ff", fontSize:"24px", flexShrink:0 }}>
+                        {t.icon}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight:750, fontSize:"15px", color:"#1f2a37" }}>{t.label}</div>
+                        <div style={{ fontSize:"13px", color:"#6b7280", marginTop:"2px" }}>{t.sub}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
+          )}
 
-            {/* 채팅 입력 (홈에서도) */}
-            <ChatInput input={input} setInput={setInput} send={send} loading={loading} />
-          </div>
-        ) : (
-          /* 채팅 뷰 */
-          <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
-            <div style={{ flex:1, overflowY:"auto", padding:"24px 28px" }}>
+          {view === "chat" && (
+            <div style={{ maxWidth:"840px", margin:"0 auto", display:"flex", flexDirection:"column", gap:"10px" }}>
               {msgs.map((m, i) => (
-                <div key={i} style={{ display:"flex", justifyContent: m.role==="user"?"flex-end":"flex-start", marginBottom:"12px" }}>
-                  {m.role === "bot" && <span style={{ fontSize:"20px", marginRight:"8px", alignSelf:"flex-end" }}>🪣</span>}
+                <div key={i} style={{ display:"flex", justifyContent: m.role==="user"?"flex-end":"flex-start" }}>
                   <div style={{
-                    maxWidth:"60%", padding:"12px 16px", borderRadius: m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px",
-                    background: m.role==="user" ? BRAND : "#fff",
+                    maxWidth:"72%", padding:"10px 16px",
+                    borderRadius: m.role==="user"?"18px 18px 2px 18px":"18px 18px 18px 2px",
+                    background: m.role==="user" ? "#1565d8" : "#dae3f7",
                     color: m.role==="user" ? "#fff" : "#1f2a37",
-                    border: m.role==="bot" ? "1px solid #e5e7eb" : "none",
-                    fontSize:"14px", whiteSpace:"pre-wrap", lineHeight:"1.6",
-                    boxShadow:"0 2px 6px rgba(0,0,0,0.06)"
+                    fontSize:"14px", lineHeight:"1.55", whiteSpace:"pre-wrap", wordBreak:"keep-all",
                   }}>
                     {m.text}
                   </div>
                 </div>
               ))}
               {loading && (
-                <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"12px" }}>
-                  <span style={{ fontSize:"20px" }}>🪣</span>
-                  <div style={{ background:"#fff", border:"1px solid #e5e7eb", borderRadius:"16px 16px 16px 4px", padding:"12px 16px", fontSize:"14px", color:"#9ca3af" }}>답변 생성 중...</div>
+                <div style={{ display:"flex" }}>
+                  <div style={{ background:"#dae3f7", borderRadius:"18px 18px 18px 2px", padding:"10px 16px", fontSize:"14px", color:"#6b7280" }}>답변 생성 중...</div>
                 </div>
               )}
               <div ref={bottomRef} />
             </div>
-            <div style={{ padding:"16px 28px", borderTop:"1px solid #e5e7eb", background:"#fff" }}>
-              <ChatInput input={input} setInput={setInput} send={send} loading={loading} />
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </main>
+
+      {/* 양동이 캐릭터 + 입력창 */}
+      <div style={{
+        position:"fixed", bottom:"70px",
+        left:`calc(${sbW}px + (100vw - ${sbW}px) / 2 - 120px)`,
+        transform:"translateX(-50%)", display:"flex", alignItems:"flex-end", gap:0, zIndex:9999, pointerEvents:"auto"
+      }}>
+        <Image src="/image/yangdongi.png" alt="양동이" width={160} height={160}
+          style={{ objectFit:"contain", filter:"drop-shadow(0 12px 18px rgba(0,0,0,.22))", pointerEvents:"none", position:"relative", top:"40px" }} />
+        <div style={{
+          position:"relative", height:"64px", display:"grid", gridTemplateColumns:"auto 1fr auto",
+          alignItems:"center", gap:"12px",
+          background:"#3c4250", color:"#fff", borderRadius:"28px", padding:"10px 12px",
+          boxShadow:"0 14px 30px rgba(0,0,0,.24)", marginLeft:"-60px",
+          width:`min(760px, calc(100vw - ${sbW}px - 260px))`
+        }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
+            <button style={{ width:"40px", height:"40px", border:"none", borderRadius:"10px", background:"rgba(255,255,255,.12)", color:"#fff", cursor:"pointer" }}>📅</button>
+            <button style={{ width:"40px", height:"40px", border:"none", borderRadius:"10px", background:"rgba(255,255,255,.12)", color:"#fff", cursor:"pointer" }}>📘</button>
+          </div>
+          <input
+            value={input} onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && send()}
+            placeholder="안녕! 난 양동이야. 어떤 점이 궁금해?"
+            style={{ width:"100%", height:"44px", border:"none", outline:"none", background:"rgba(255,255,255,.12)", color:"#fff", borderRadius:"12px", padding:"0 12px", fontSize:"14px" }}
+          />
+          <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
+            <button style={{ width:"44px", height:"44px", border:"none", borderRadius:"12px", background:"rgba(255,255,255,.12)", color:"#fff", cursor:"pointer" }}>🎙</button>
+            <button onClick={() => send()} style={{ width:"44px", height:"44px", border:"none", borderRadius:"12px", background:"#00a2ff", color:"#fff", fontWeight:800, cursor:"pointer", fontSize:"16px" }}>➜</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-
-function ChatInput({ input, setInput, send, loading }: { input: string; setInput: (v: string) => void; send: (t?: string) => void; loading: boolean }) {
-  return (
-    <div style={{ display:"flex", gap:"8px" }}>
-      <input
-        value={input} onChange={e => setInput(e.target.value)}
-        onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
-        placeholder="학사 정보를 물어보세요..."
-        style={{ flex:1, height:"48px", padding:"12px 16px", border:"1px solid #e5e7eb", borderRadius:"12px", fontSize:"14px", outline:"none" }}
-      />
-      <button onClick={() => send()} disabled={loading || !input.trim()}
-        style={{ width:"48px", height:"48px", background: BRAND, border:"none", borderRadius:"12px", color:"#fff", fontSize:"20px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
-        ➤
-      </button>
-    </div>
-  );
-}
-
-const sideBtn: React.CSSProperties = {
-  width:"100%", padding:"10px 12px", background:"none", border:"none", borderRadius:"8px",
-  textAlign:"left", fontSize:"14px", cursor:"pointer", marginBottom:"4px", color:"#374151",
-};
