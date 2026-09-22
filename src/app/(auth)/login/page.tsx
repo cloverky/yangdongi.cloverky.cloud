@@ -49,13 +49,13 @@ export default function LoginPage() {
                 value={id} onChange={e => setId(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && doLogin()}
                 type="text" placeholder="ID (학번/교번)"
-                style={{ width:"100%", height:"48px", padding:"12px 14px", marginBottom:"12px", border:"1px solid #e5e7eb", borderRadius:"10px", fontSize:"14px", background:"#f7f8fb" }}
+                style={{ width:"100%", height:"48px", padding:"12px 14px", marginBottom:"12px", border:"1px solid #e5e7eb", borderRadius:"10px", fontSize:"14px", background:"#f7f8fb", color:"#111827" }}
               />
               <input
                 value={pw} onChange={e => setPw(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && doLogin()}
                 type="password" placeholder="Password"
-                style={{ width:"100%", height:"48px", padding:"12px 14px", marginBottom:"4px", border:"1px solid #e5e7eb", borderRadius:"10px", fontSize:"14px", background:"#f7f8fb" }}
+                style={{ width:"100%", height:"48px", padding:"12px 14px", marginBottom:"4px", border:"1px solid #e5e7eb", borderRadius:"10px", fontSize:"14px", background:"#f7f8fb", color:"#111827" }}
               />
               {err && <p style={{ color:"#b10017", fontSize:"13px", marginBottom:"8px" }}>{err}</p>}
               <button onClick={doLogin} disabled={loading}

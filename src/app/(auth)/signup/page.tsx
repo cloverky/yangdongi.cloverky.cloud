@@ -13,7 +13,7 @@ const DEPARTMENTS = [
   { group: "기타", items: ["자유전공학과","교양과"] },
 ];
 
-const inputStyle = { width:"60%", height:"46px", padding:"12px 14px", marginBottom:"6px", border:"1px solid #ddd", borderRadius:"10px", fontSize:"14px", display:"block" };
+const inputStyle = { width:"60%", height:"46px", padding:"12px 14px", marginBottom:"6px", border:"1px solid #ddd", borderRadius:"10px", fontSize:"14px", display:"block", color:"#111827", background:"#fff" };
 
 export default function SignupPage() {
   const router = useRouter();
