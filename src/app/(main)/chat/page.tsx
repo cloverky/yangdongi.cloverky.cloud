@@ -73,7 +73,7 @@ export default function ChatPage() {
       }}>
         {/* 로고 */}
         <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"8px 10px 14px 8px", borderBottom:"1px solid rgba(255,255,255,.18)", marginBottom:"12px" }}>
-          <Image src="/image/yangdongi.png" alt="양동이" width={28} height={28} style={{ borderRadius:"50%", background:"#fff", objectFit:"cover" }} />
+          <Image src="/image/yangdongi.png" alt="양동이" width={28} height={28} tabIndex={-1} style={{ borderRadius:"50%", background:"#fff", objectFit:"cover", outline:"none" }} />
           <span style={{ fontWeight:700, fontSize:"18px" }}>양동이</span>
         </div>
 
