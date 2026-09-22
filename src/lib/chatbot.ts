@@ -1,7 +1,7 @@
 import { prisma } from "./db";
 
 const KEYWORDS: Record<string, string[]> = {
-  greeting:    ["안녕", "hello", "hi", "반가", "ㅎㅇ", "ㅎㅎ", "헬로"],
+  greeting:    ["안녕", "hello", "hi", "하이", "반가", "ㅎㅇ", "ㅎㅎ", "헬로"],
   timetable:   ["시간표", "수업", "강의", "스케줄", "일정"],
   grades:      ["성적", "학점", "gpa", "점수", "학업"],
   cert:        ["자격증", "토익", "토플", "컴활", "한국사", "접수", "원서"],
@@ -29,7 +29,7 @@ export async function chat(message: string, studentId?: string): Promise<string>
 
   switch (category) {
     case "greeting":
-      return "안녕하세요! 저는 동양미래대학교 챗봇 양동이예요 🪣\n시간표, 성적, 공지사항, 과제, 캠퍼스 시설, 학과 정보를 물어보세요!";
+      return "안녕하세요! 저는 동양미래대학교 챗봇 양동이예요!\n시간표, 성적, 공지사항, 과제, 캠퍼스 시설, 학과 정보를 물어보세요!";
 
     case "timetable": {
       if (!studentId) return "시간표 조회는 로그인 후 이용할 수 있어요.";
