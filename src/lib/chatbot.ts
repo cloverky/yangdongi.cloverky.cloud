@@ -40,12 +40,9 @@ export async function chat(message: string, studentId?: string): Promise<string>
       if (!rows.length) return "등록된 수업이 없어요.";
 
       const DAY_MAP: Record<string, string> = {
-        "월요일":"월", "월":  "월",
-        "화요일":"화", "화":  "화",
-        "수요일":"수", "수":  "수",
-        "목요일":"목", "목":  "목",
-        "금요일":"금", "금":  "금",
-        "오늘":   ["일","월","화","수","목","금","토"][new Date().getDay()],
+        "월요일":"월", "화요일":"화", "수요일":"수",
+        "목요일":"목", "금요일":"금",
+        "오늘": ["일","월","화","수","목","금","토"][new Date().getDay()],
       };
       let dayFilter: string | null = null;
       for (const [kw, day] of Object.entries(DAY_MAP)) {
