@@ -14,13 +14,15 @@ export async function POST(req: NextRequest) {
   const studentId = user?.role === "student" ? (user?.id as string) : undefined;
   const answer = await chat(message, studentId);
 
-  if (user) {
-    await prisma.chatLog.createMany({
-      data: [
-        { uid: user.id, message, speaker: "user" },
-        { uid: user.id, message: answer, speaker: "bot" },
-      ],
-    });
+  if (user?.role !== "student") {
+    try {
+      await prisma.chatLog.createMany({
+        data: [
+          { uid: user.id, message, speaker: "user" },
+          { uid: user.id, message: answer, speaker: "bot" },
+        ],
+      });
+    } catch (_) {}
   }
 
   return NextResponse.json({ answer });

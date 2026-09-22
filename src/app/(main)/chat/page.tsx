@@ -57,7 +57,7 @@ export default function ChatPage() {
 
   if (status === "loading") return null;
   const user = session?.user as { name?: string; uid?: string; department?: string; role?: string } | undefined;
-  const todayStr = new Date().toLocaleDateString("ko-KR", { year:"numeric", month:"numeric", day:"numeric", weekday:"short" }).replace(/\. /g,"-").replace(".","-");
+  const todayStr = new Date().toLocaleDateString("ko-KR", { year:"numeric", month:"long", day:"numeric", weekday:"short" });
   const sbW = sidebarOpen ? 260 : 0;
 
   return (
