@@ -208,7 +208,7 @@ export default function ChatPage() {
         display:"flex", alignItems:"flex-end", zIndex:9999, pointerEvents:"auto"
       }}>
         <Image src="/image/yangdongi.png" alt="양동이" width={300} height={300}
-          style={{ objectFit:"contain", filter:"drop-shadow(0 12px 18px rgba(0,0,0,.22))", pointerEvents:"none", position:"relative", top:"20px", marginRight:"-90px" }} />
+          style={{ objectFit:"contain", filter:"drop-shadow(0 12px 18px rgba(0,0,0,.22))", pointerEvents:"none", position:"relative", top:"100px", marginRight:"-100px" }} />
         <div style={{
           height:"64px", display:"grid", gridTemplateColumns:"auto 1fr auto",
           alignItems:"center", gap:"10px",
