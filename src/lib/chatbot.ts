@@ -38,9 +38,30 @@ export async function chat(message: string, studentId?: string): Promise<string>
         include: { class: true },
       });
       if (!rows.length) return "등록된 수업이 없어요.";
+
+      const DAY_MAP: Record<string, string> = {
+        "월요일":"월", "월":  "월",
+        "화요일":"화", "화":  "화",
+        "수요일":"수", "수":  "수",
+        "목요일":"목", "목":  "목",
+        "금요일":"금", "금":  "금",
+        "오늘":   ["일","월","화","수","목","금","토"][new Date().getDay()],
+      };
+      let dayFilter: string | null = null;
+      for (const [kw, day] of Object.entries(DAY_MAP)) {
+        if (message.includes(kw)) { dayFilter = day; break; }
+      }
+
+      let filtered = rows;
+      if (dayFilter) {
+        filtered = rows.filter(r => r.class.schedule.startsWith(dayFilter!));
+        if (!filtered.length) return `${dayFilter}요일에는 수업이 없어요.`;
+      }
+
+      const label = dayFilter ? `${dayFilter}요일 수업` : "이번 학기 시간표";
       return (
-        "📅 이번 학기 시간표\n" +
-        rows.map((r) => `• ${r.class.subject} — ${r.class.professor} / ${r.class.classroom} / ${r.class.schedule}`).join("\n")
+        `📅 ${label}\n` +
+        filtered.map((r) => `• ${r.class.subject} — ${r.class.professor} / ${r.class.classroom} / ${r.class.schedule}`).join("\n")
       );
     }
 
