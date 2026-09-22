@@ -17,32 +17,33 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.uid || !credentials?.password) return null;
         const { uid, password, loginType } = credentials;
 
-        if (loginType === "student") {
-          const student = await prisma.student.findUnique({
-            where: { studentId: uid },
-          });
-          if (!student) return null;
-          const ok = await bcrypt.compare(password, student.pw);
+        // User 테이블 먼저 조회
+        const user = await prisma.user.findUnique({ where: { uid } });
+        if (user) {
+          const ok = await bcrypt.compare(password, user.passwordHash);
           if (!ok) return null;
           return {
-            id: student.studentId,
-            name: student.name,
-            email: "",
-            role: "student",
-            department: student.department,
+            id: user.uid,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            department: user.department,
           };
         }
 
-        const user = await prisma.user.findUnique({ where: { uid } });
-        if (!user) return null;
-        const ok = await bcrypt.compare(password, user.passwordHash);
+        // Student 테이블 조회
+        const student = await prisma.student.findUnique({
+          where: { studentId: uid },
+        });
+        if (!student) return null;
+        const ok = await bcrypt.compare(password, student.pw);
         if (!ok) return null;
         return {
-          id: user.uid,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          department: user.department,
+          id: student.studentId,
+          name: student.name,
+          email: "",
+          role: "student",
+          department: student.department,
         };
       },
     }),
