@@ -72,16 +72,19 @@ export default function ChatPage() {
           {[
             { icon:"💬", label:"새 채팅", onClick:() => { setView("home"); setMsgs([{ role:"bot", text:"안녕! 난 양동이야. 어떤 점이 궁금해?" }]); } },
             { icon:"🏠", label:"메인페이지", onClick:() => setView("home") },
+            { icon:"📅", label:"지난 7일", onClick:() => {} },
             { icon:"📚", label:"학교 홈페이지", onClick:() => window.open("https://www.dongyang.ac.kr/dmu/index.do") },
+            { icon:"👤", label:"개인 정보", onClick:() => {} },
+            { icon:"🎓", label:"학사 일정", onClick:() => window.open("https://www.dongyang.ac.kr/dmu/4749/subview.do") },
           ].map((item, i) => (
             <button key={i} onClick={item.onClick} style={{
               display:"flex", alignItems:"center", gap:"10px", padding:"12px", borderRadius:"10px",
-              color:"#eaf2ff", background:"none", border:"none", cursor:"pointer", textAlign:"left", fontSize:"14px",
-              transition:"background .18s"
+              color:"#eaf2ff", background:"none", border:"none", outline:"none", cursor:"pointer", textAlign:"left", fontSize:"14px",
+              transition:"background .18s", width:"100%"
             }}
             onMouseOver={e => (e.currentTarget.style.background="rgba(255,255,255,.14)")}
             onMouseOut={e => (e.currentTarget.style.background="none")}>
-              <span style={{ width:"22px", height:"22px", display:"grid", placeItems:"center", background:"rgba(255,255,255,.18)", borderRadius:"8px", fontSize:"13px" }}>{item.icon}</span>
+              <span style={{ width:"22px", height:"22px", display:"grid", placeItems:"center", background:"rgba(255,255,255,.18)", borderRadius:"8px", fontSize:"13px", flexShrink:0 }}>{item.icon}</span>
               <span>{item.label}</span>
             </button>
           ))}
