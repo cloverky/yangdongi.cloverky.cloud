@@ -19,6 +19,27 @@ function match(message: string): string | null {
   return null;
 }
 
+const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
+
+/** 서버(Vercel)는 UTC 라서 "오늘"을 한국 날짜로 맞춰 계산한다. */
+function kstDay(offsetDays: number): string {
+  const kst = new Date(Date.now() + 9 * 3600_000 + offsetDays * 86400_000);
+  return WEEK[kst.getUTCDay()];
+}
+
+/** 메시지에 나온 요일을 전부 월~일 순서로 돌려준다. */
+function daysInMessage(message: string): string[] {
+  const found = new Set<string>();
+  for (const m of message.matchAll(/([월화수목금토일])요일/g)) found.add(m[1]);
+  // "월화", "월수금" 같은 줄임말 — 한 글자는 "수업"의 수, "9월"의 월과 겹쳐서 두 글자 이상만.
+  for (const m of message.matchAll(/[월화수목금토일]{2,}/g)) {
+    for (const ch of m[0]) found.add(ch);
+  }
+  if (message.includes("오늘")) found.add(kstDay(0));
+  if (message.includes("내일")) found.add(kstDay(1));
+  return WEEK.filter((d) => found.has(d));
+}
+
 const FALLBACK =
   "저는 동양미래대학교 학사 정보만 답변할 수 있어요.\n" +
   "시간표, 성적, 공지사항, 과제, 캠퍼스 시설, 학과 정보를 물어보세요!";
@@ -39,23 +60,15 @@ export async function chat(message: string, studentId?: string): Promise<string>
       });
       if (!rows.length) return "등록된 수업이 없어요.";
 
-      const DAY_MAP: Record<string, string> = {
-        "월요일":"월", "화요일":"화", "수요일":"수",
-        "목요일":"목", "금요일":"금",
-        "오늘": ["일","월","화","수","목","금","토"][new Date().getDay()],
-      };
-      let dayFilter: string | null = null;
-      for (const [kw, day] of Object.entries(DAY_MAP)) {
-        if (message.includes(kw)) { dayFilter = day; break; }
-      }
+      const days = daysInMessage(message);
 
       let filtered = rows;
-      if (dayFilter) {
-        filtered = rows.filter(r => r.class.schedule.startsWith(dayFilter!));
-        if (!filtered.length) return `${dayFilter}요일에는 수업이 없어요.`;
+      if (days.length) {
+        filtered = rows.filter(r => days.some((d) => r.class.schedule.startsWith(d)));
+        if (!filtered.length) return `${days.join("·")}요일에는 수업이 없어요.`;
       }
 
-      const label = dayFilter ? `${dayFilter}요일 수업` : "이번 학기 시간표";
+      const label = days.length ? `${days.join("·")}요일 수업` : "이번 학기 시간표";
       return (
         `📅 ${label}\n` +
         filtered.map((r) => `• ${r.class.subject} — ${r.class.professor} / ${r.class.classroom} / ${r.class.schedule}`).join("\n")
