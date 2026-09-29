@@ -9,6 +9,7 @@ const KEYWORDS: Record<string, string[]> = {
   assignments: ["과제", "숙제", "마감", "제출"],
   campus:      ["캠퍼스", "건물", "위치", "시설", "장소", "어디"],
   departments: ["학과", "전공", "학부", "교수", "커리큘럼", "교육과정"],
+  intro:       ["누구", "소개", "이름"],
 };
 
 function match(message: string): string | null {
@@ -50,6 +51,7 @@ export async function chat(message: string, studentId?: string): Promise<string>
 
   switch (category) {
     case "greeting":
+    case "intro":
       return "안녕하세요! 저는 동양미래대학교 챗봇 양동이예요!\n시간표, 성적, 공지사항, 과제, 캠퍼스 시설, 학과 정보를 물어보세요!";
 
     case "timetable": {
