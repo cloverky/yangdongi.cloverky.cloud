@@ -31,13 +31,14 @@ export async function GET() {
   ]);
 }
 
-// 학생 계정은 학적 데이터라 지우지 않고 대화 기록만 삭제한다.
+// 학생 계정은 학적 데이터라 탈퇴(삭제) 불가
 export async function DELETE() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "인증 필요" }, { status: 401 });
 
   const { id, role } = session.user as any;
+  if (role === "student") return NextResponse.json({ error: "학생 계정은 탈퇴할 수 없어요" }, { status: 403 });
   await prisma.chatLog.deleteMany({ where: { uid: id } });
-  if (role !== "student") await prisma.user.delete({ where: { uid: id } });
+  await prisma.user.delete({ where: { uid: id } });
   return NextResponse.json({ ok: true });
 }

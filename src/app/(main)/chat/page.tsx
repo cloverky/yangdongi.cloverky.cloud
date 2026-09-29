@@ -23,6 +23,21 @@ const SB_ITEMS = [
   { icon:"⚙️", label:"설정",      key:"settings" },
 ];
 
+interface Log { id: number; message: string; speaker: "user"|"bot"; createdAt: string; }
+
+/** 날짜별로 묶고, 질문 + 뒤따르는 답변을 한 쌍으로 묶는다. */
+function groupLogs(logs: Log[]) {
+  const days: { day: string; pairs: Log[][] }[] = [];
+  for (const l of logs) {
+    const day = new Date(l.createdAt).toLocaleDateString("ko-KR", { month:"long", day:"numeric", weekday:"short" });
+    if (days.at(-1)?.day !== day) days.push({ day, pairs: [] });
+    const pairs = days.at(-1)!.pairs;
+    if (l.speaker === "bot" && pairs.at(-1)?.length === 1 && pairs.at(-1)![0].speaker === "user") pairs.at(-1)!.push(l);
+    else pairs.push([l]);
+  }
+  return days;
+}
+
 export default function ChatPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -33,7 +48,7 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeKey, setActiveKey] = useState("today");
   const [profile, setProfile] = useState<[string, string][] | null>(null);
-  const [logs, setLogs] = useState<{ message: string; speaker: "user"|"bot"; createdAt: string }[] | null>(null);
+  const [logs, setLogs] = useState<Log[] | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
@@ -56,15 +71,20 @@ export default function ChatPage() {
     setLoading(false);
   }
 
-  async function deleteAccount(isStudent: boolean) {
-    const ok = confirm(isStudent
-      ? "지금까지의 대화 기록을 모두 삭제할까요? 되돌릴 수 없어요."
-      : "정말 탈퇴할까요? 계정과 대화 기록이 모두 삭제되고 되돌릴 수 없어요.");
-    if (!ok) return;
+  // ids 가 없으면 전체 삭제
+  async function deleteLogs(ids?: number[]) {
+    if (!confirm(ids ? "선택한 대화를 삭제할까요?" : "전체 대화 기록을 삭제할까요? 되돌릴 수 없어요.")) return;
+    const res = await fetch("/api/history", { method:"DELETE", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ ids }) });
+    if (!res.ok) return alert("삭제하지 못했어요. 다시 시도해 주세요.");
+    if (ids) setLogs(prev => prev?.filter(l => !ids.includes(l.id)) ?? null);
+    else { setLogs(null); alert("전체 대화 기록을 삭제했어요."); }
+  }
+
+  async function deleteAccount() {
+    if (!confirm("정말 탈퇴할까요? 계정과 대화 기록이 모두 삭제되고 되돌릴 수 없어요.")) return;
     const res = await fetch("/api/me", { method:"DELETE" });
     if (!res.ok) return alert("처리하지 못했어요. 다시 시도해 주세요.");
-    if (isStudent) { setLogs(null); alert("대화 기록을 삭제했어요."); }
-    else signOut({ callbackUrl:"/login" });
+    signOut({ callbackUrl:"/login" });
   }
 
   if (status === "loading") return null;
@@ -212,9 +232,15 @@ export default function ChatPage() {
                 <button onClick={() => signOut({ callbackUrl:"/login" })} style={{ padding:"10px 16px", borderRadius:"10px", border:"1px solid #d7deea", background:"#fff", color:"#1f2a37", fontSize:"14px", cursor:"pointer" }}>
                   로그아웃
                 </button>
-                <button onClick={() => deleteAccount(user?.role === "student")} style={{ padding:"10px 16px", borderRadius:"10px", border:"1px solid #f3c4c4", background:"#fff5f5", color:"#d33", fontSize:"14px", cursor:"pointer" }}>
-                  {user?.role === "student" ? "대화 기록 삭제" : "회원 탈퇴"}
+                <button onClick={() => deleteLogs()} style={{ padding:"10px 16px", borderRadius:"10px", border:"1px solid #f3c4c4", background:"#fff5f5", color:"#d33", fontSize:"14px", cursor:"pointer" }}>
+                  전체 대화 삭제
                 </button>
+                {/* 학생은 학적 데이터라 탈퇴 없음 */}
+                {user?.role !== "student" && (
+                  <button onClick={deleteAccount} style={{ padding:"10px 16px", borderRadius:"10px", border:"1px solid #f3c4c4", background:"#fff5f5", color:"#d33", fontSize:"14px", cursor:"pointer" }}>
+                    회원 탈퇴
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -224,26 +250,32 @@ export default function ChatPage() {
               <div style={{ fontWeight:700, fontSize:"18px", color:"#1f2a37", marginBottom:"8px" }}>지난 7일 대화</div>
               {!logs ? <div style={{ color:"#6b7280", fontSize:"14px" }}>불러오는 중...</div>
                 : !logs.length ? <div style={{ color:"#6b7280", fontSize:"14px" }}>최근 7일간 대화가 없어요.</div>
-                : logs.map((l, i) => {
-                  const day = new Date(l.createdAt).toLocaleDateString("ko-KR", { month:"long", day:"numeric", weekday:"short" });
-                  const prevDay = i > 0 && new Date(logs[i-1].createdAt).toLocaleDateString("ko-KR", { month:"long", day:"numeric", weekday:"short" });
-                  return (
-                    <div key={i}>
-                      {day !== prevDay && <div style={{ textAlign:"center", color:"#6b7280", fontSize:"12px", margin:"14px 0 6px" }}>{day}</div>}
-                      <div style={{ display:"flex", justifyContent: l.speaker==="user"?"flex-end":"flex-start" }}>
-                        <div style={{
-                          maxWidth:"72%", padding:"10px 16px",
-                          borderRadius: l.speaker==="user"?"18px 18px 2px 18px":"18px 18px 18px 2px",
-                          background: l.speaker==="user" ? "#1565d8" : "#dae3f7",
-                          color: l.speaker==="user" ? "#fff" : "#1f2a37",
-                          fontSize:"14px", lineHeight:"1.55", whiteSpace:"pre-wrap", wordBreak:"keep-all",
-                        }}>
-                          {l.message}
-                        </div>
-                      </div>
+                : groupLogs(logs).map(({ day, pairs }) => (
+                  <div key={day}>
+                    <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:"8px", color:"#6b7280", fontSize:"12px", margin:"14px 0 6px" }}>
+                      {day}
+                      <button onClick={() => deleteLogs(pairs.flat().map(l => l.id))} style={{ border:"none", background:"none", color:"#d33", fontSize:"12px", cursor:"pointer" }}>이 날 삭제</button>
                     </div>
-                  );
-                })}
+                    {pairs.map(pair => (
+                      <div key={pair[0].id} style={{ position:"relative", display:"flex", flexDirection:"column", gap:"6px", padding:"8px 36px 8px 0", borderRadius:"12px" }}>
+                        {pair.map(l => (
+                          <div key={l.id} style={{ display:"flex", justifyContent: l.speaker==="user"?"flex-end":"flex-start" }}>
+                            <div style={{
+                              maxWidth:"72%", padding:"10px 16px",
+                              borderRadius: l.speaker==="user"?"18px 18px 2px 18px":"18px 18px 18px 2px",
+                              background: l.speaker==="user" ? "#1565d8" : "#dae3f7",
+                              color: l.speaker==="user" ? "#fff" : "#1f2a37",
+                              fontSize:"14px", lineHeight:"1.55", whiteSpace:"pre-wrap", wordBreak:"keep-all",
+                            }}>
+                              {l.message}
+                            </div>
+                          </div>
+                        ))}
+                        <button onClick={() => deleteLogs(pair.map(l => l.id))} title="이 대화 삭제" style={{ position:"absolute", right:0, top:"8px", width:"28px", height:"28px", border:"none", borderRadius:"8px", background:"#eef1f7", cursor:"pointer", fontSize:"13px" }}>🗑</button>
+                      </div>
+                    ))}
+                  </div>
+                ))}
             </div>
           )}
 
