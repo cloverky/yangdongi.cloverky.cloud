@@ -30,9 +30,10 @@ export default function ChatPage() {
   const [msgs, setMsgs] = useState<Msg[]>([{ role:"bot", text:"안녕! 난 양동이야. 어떤 점이 궁금해?" }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState<"home"|"chat">("home");
+  const [view, setView] = useState<"home"|"chat"|"profile">("home");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeKey, setActiveKey] = useState("today");
+  const [profile, setProfile] = useState<[string, string][] | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
@@ -88,6 +89,10 @@ export default function ChatPage() {
                 onClick={() => {
                   setActiveKey(item.key);
                   if (item.key === "today") { setView("home"); setMsgs([{ role:"bot", text:"안녕! 난 양동이야. 어떤 점이 궁금해?" }]); }
+                  else if (item.key === "personal") {
+                    setView("profile");
+                    if (!profile) fetch("/api/me").then(r => r.ok ? r.json() : []).then(setProfile);
+                  }
                   else if (item.href) window.open(item.href);
                 }}
                 style={{
@@ -171,6 +176,20 @@ export default function ChatPage() {
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {view === "profile" && (
+            <div style={{ maxWidth:"560px", margin:"0 auto", background:"#fff", borderRadius:"18px", boxShadow:"0 8px 24px rgba(0,0,0,.06)", padding:"28px 32px" }}>
+              <div style={{ fontWeight:700, fontSize:"18px", color:"#1f2a37", marginBottom:"18px" }}>개인 정보</div>
+              {!profile ? <div style={{ color:"#6b7280", fontSize:"14px" }}>불러오는 중...</div>
+                : !profile.length ? <div style={{ color:"#6b7280", fontSize:"14px" }}>정보를 불러오지 못했어요.</div>
+                : profile.map(([k, v]) => (
+                  <div key={k} style={{ display:"flex", padding:"12px 0", borderTop:"1px solid #eef1f7", fontSize:"14px" }}>
+                    <span style={{ width:"110px", color:"#6b7280" }}>{k}</span>
+                    <span style={{ color:"#1f2a37", fontWeight:600 }}>{v}</span>
+                  </div>
+                ))}
             </div>
           )}
 
