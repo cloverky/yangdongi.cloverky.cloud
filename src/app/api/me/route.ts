@@ -30,3 +30,14 @@ export async function GET() {
     ["이메일", u.email],
   ]);
 }
+
+// 학생 계정은 학적 데이터라 지우지 않고 대화 기록만 삭제한다.
+export async function DELETE() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: "인증 필요" }, { status: 401 });
+
+  const { id, role } = session.user as any;
+  await prisma.chatLog.deleteMany({ where: { uid: id } });
+  if (role !== "student") await prisma.user.delete({ where: { uid: id } });
+  return NextResponse.json({ ok: true });
+}

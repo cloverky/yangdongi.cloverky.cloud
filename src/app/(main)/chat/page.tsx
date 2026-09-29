@@ -18,7 +18,6 @@ const TILES = [
 const SB_ITEMS = [
   { icon:"📅", label:"오늘",      key:"today" },
   { icon:"📅", label:"지난 7일",  key:"logs" },
-  { icon:"👤", label:"개인 정보", key:"personal" },
   { icon:"🎓", label:"학사 일정", key:"schedule", href:"https://www.dongyang.ac.kr/dmu/4749/subview.do" },
   { icon:"📚", label:"도서관",    key:"library", href:"https://lib.dongyang.ac.kr/" },
   { icon:"⚙️", label:"설정",      key:"settings" },
@@ -30,7 +29,7 @@ export default function ChatPage() {
   const [msgs, setMsgs] = useState<Msg[]>([{ role:"bot", text:"안녕! 난 양동이야. 어떤 점이 궁금해?" }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState<"home"|"chat"|"profile"|"logs">("home");
+  const [view, setView] = useState<"home"|"chat"|"settings"|"logs">("home");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeKey, setActiveKey] = useState("today");
   const [profile, setProfile] = useState<[string, string][] | null>(null);
@@ -55,6 +54,17 @@ export default function ChatPage() {
       setMsgs(prev => [...prev, { role:"bot", text:"오류가 발생했어요. 다시 시도해 주세요." }]);
     }
     setLoading(false);
+  }
+
+  async function deleteAccount(isStudent: boolean) {
+    const ok = confirm(isStudent
+      ? "지금까지의 대화 기록을 모두 삭제할까요? 되돌릴 수 없어요."
+      : "정말 탈퇴할까요? 계정과 대화 기록이 모두 삭제되고 되돌릴 수 없어요.");
+    if (!ok) return;
+    const res = await fetch("/api/me", { method:"DELETE" });
+    if (!res.ok) return alert("처리하지 못했어요. 다시 시도해 주세요.");
+    if (isStudent) { setLogs(null); alert("대화 기록을 삭제했어요."); }
+    else signOut({ callbackUrl:"/login" });
   }
 
   if (status === "loading") return null;
@@ -95,8 +105,8 @@ export default function ChatPage() {
                     setLogs(null);
                     fetch("/api/history").then(r => r.ok ? r.json() : []).then(setLogs);
                   }
-                  else if (item.key === "personal") {
-                    setView("profile");
+                  else if (item.key === "settings") {
+                    setView("settings");
                     if (!profile) fetch("/api/me").then(r => r.ok ? r.json() : []).then(setProfile);
                   }
                   else if (item.href) window.open(item.href);
@@ -185,9 +195,10 @@ export default function ChatPage() {
             </div>
           )}
 
-          {view === "profile" && (
+          {view === "settings" && (
             <div style={{ maxWidth:"560px", margin:"0 auto", background:"#fff", borderRadius:"18px", boxShadow:"0 8px 24px rgba(0,0,0,.06)", padding:"28px 32px" }}>
-              <div style={{ fontWeight:700, fontSize:"18px", color:"#1f2a37", marginBottom:"18px" }}>개인 정보</div>
+              <div style={{ fontWeight:700, fontSize:"18px", color:"#1f2a37", marginBottom:"18px" }}>설정</div>
+              <div style={{ fontWeight:600, fontSize:"13px", color:"#6b7280", marginBottom:"6px" }}>내 정보</div>
               {!profile ? <div style={{ color:"#6b7280", fontSize:"14px" }}>불러오는 중...</div>
                 : !profile.length ? <div style={{ color:"#6b7280", fontSize:"14px" }}>정보를 불러오지 못했어요.</div>
                 : profile.map(([k, v]) => (
@@ -196,6 +207,15 @@ export default function ChatPage() {
                     <span style={{ color:"#1f2a37", fontWeight:600 }}>{v}</span>
                   </div>
                 ))}
+              <div style={{ fontWeight:600, fontSize:"13px", color:"#6b7280", margin:"24px 0 10px" }}>계정</div>
+              <div style={{ display:"flex", gap:"10px" }}>
+                <button onClick={() => signOut({ callbackUrl:"/login" })} style={{ padding:"10px 16px", borderRadius:"10px", border:"1px solid #d7deea", background:"#fff", color:"#1f2a37", fontSize:"14px", cursor:"pointer" }}>
+                  로그아웃
+                </button>
+                <button onClick={() => deleteAccount(user?.role === "student")} style={{ padding:"10px 16px", borderRadius:"10px", border:"1px solid #f3c4c4", background:"#fff5f5", color:"#d33", fontSize:"14px", cursor:"pointer" }}>
+                  {user?.role === "student" ? "대화 기록 삭제" : "회원 탈퇴"}
+                </button>
+              </div>
             </div>
           )}
 
