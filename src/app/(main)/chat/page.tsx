@@ -204,7 +204,9 @@ export default function ChatPage() {
       <div style={{
         position:"fixed", bottom:"24px",
         left:`calc(${sbW}px + (100vw - ${sbW}px) / 2 - 120px)`,
-        transform:"translateX(-50%)",
+        // 홈에선 카드 바로 아래(바 하단이 뷰포트 위에서 ~600px)로 올려두고, 대화 시작 시 하단으로 내려옴
+        transform: view === "home" ? "translate(-50%, min(0px, calc(624px - 100vh)))" : "translate(-50%, 0)",
+        transition:"transform .4s ease",
         display:"flex", alignItems:"flex-end", zIndex:9999, pointerEvents:"auto"
       }}>
         <Image src="/image/yangdongi.png" alt="양동이" width={300} height={300}
