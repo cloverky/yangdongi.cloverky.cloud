@@ -30,10 +30,11 @@ export default function ChatPage() {
   const [msgs, setMsgs] = useState<Msg[]>([{ role:"bot", text:"안녕! 난 양동이야. 어떤 점이 궁금해?" }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState<"home"|"chat"|"profile">("home");
+  const [view, setView] = useState<"home"|"chat"|"profile"|"logs">("home");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeKey, setActiveKey] = useState("today");
   const [profile, setProfile] = useState<[string, string][] | null>(null);
+  const [logs, setLogs] = useState<{ message: string; speaker: "user"|"bot"; createdAt: string }[] | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
@@ -89,6 +90,11 @@ export default function ChatPage() {
                 onClick={() => {
                   setActiveKey(item.key);
                   if (item.key === "today") { setView("home"); setMsgs([{ role:"bot", text:"안녕! 난 양동이야. 어떤 점이 궁금해?" }]); }
+                  else if (item.key === "logs") {
+                    setView("logs");
+                    setLogs(null);
+                    fetch("/api/history").then(r => r.ok ? r.json() : []).then(setLogs);
+                  }
                   else if (item.key === "personal") {
                     setView("profile");
                     if (!profile) fetch("/api/me").then(r => r.ok ? r.json() : []).then(setProfile);
@@ -190,6 +196,34 @@ export default function ChatPage() {
                     <span style={{ color:"#1f2a37", fontWeight:600 }}>{v}</span>
                   </div>
                 ))}
+            </div>
+          )}
+
+          {view === "logs" && (
+            <div style={{ maxWidth:"820px", margin:"0 auto", display:"flex", flexDirection:"column", gap:"10px" }}>
+              <div style={{ fontWeight:700, fontSize:"18px", color:"#1f2a37", marginBottom:"8px" }}>지난 7일 대화</div>
+              {!logs ? <div style={{ color:"#6b7280", fontSize:"14px" }}>불러오는 중...</div>
+                : !logs.length ? <div style={{ color:"#6b7280", fontSize:"14px" }}>최근 7일간 대화가 없어요.</div>
+                : logs.map((l, i) => {
+                  const day = new Date(l.createdAt).toLocaleDateString("ko-KR", { month:"long", day:"numeric", weekday:"short" });
+                  const prevDay = i > 0 && new Date(logs[i-1].createdAt).toLocaleDateString("ko-KR", { month:"long", day:"numeric", weekday:"short" });
+                  return (
+                    <div key={i}>
+                      {day !== prevDay && <div style={{ textAlign:"center", color:"#6b7280", fontSize:"12px", margin:"14px 0 6px" }}>{day}</div>}
+                      <div style={{ display:"flex", justifyContent: l.speaker==="user"?"flex-end":"flex-start" }}>
+                        <div style={{
+                          maxWidth:"72%", padding:"10px 16px",
+                          borderRadius: l.speaker==="user"?"18px 18px 2px 18px":"18px 18px 18px 2px",
+                          background: l.speaker==="user" ? "#1565d8" : "#dae3f7",
+                          color: l.speaker==="user" ? "#fff" : "#1f2a37",
+                          fontSize:"14px", lineHeight:"1.55", whiteSpace:"pre-wrap", wordBreak:"keep-all",
+                        }}>
+                          {l.message}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           )}
 

@@ -17,7 +17,6 @@ model User {
   email        String    @db.VarChar(150)
   passwordHash String    @db.VarChar(200)
   createdAt    DateTime  @default(now())
-  chatLogs     ChatLog[]
 
   @@map("users")
 }
@@ -119,7 +118,6 @@ model ChatLog {
   message   String
   speaker   Speaker
   createdAt DateTime @default(now())
-  user      User?    @relation(fields: [uid], references: [uid])
 
   @@map("chat_logs")
 }
