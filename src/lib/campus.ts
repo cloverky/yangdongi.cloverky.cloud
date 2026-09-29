@@ -1,5 +1,6 @@
 // 출처: 학교 홈페이지 대학시설(https://www.dongyang.ac.kr/dmu/4433/subview.do) 층별 안내 + 캠퍼스 지도
-export const CAMPUS_MAP_URL = "https://www.dongyang.ac.kr/dmu/4433/subview.do";
+// 채팅 화면이 이 줄을 캠퍼스 지도 이미지(public/image/campus-map.png)로 바꿔 그린다
+export const CAMPUS_MAP = "[[campus-map]]";
 
 interface Building { no: number; name: string; route: string; floors: [string, string[]][]; }
 
@@ -115,7 +116,7 @@ export function campusAnswer(message: string): string | null {
     return (
       `🏫 ${b.name}\n📍 ${b.route}\n\n` +
       b.floors.map(([f, items]) => `• ${f}: ${items.join(", ")}`).join("\n") +
-      `\n\n🗺 캠퍼스 지도: ${CAMPUS_MAP_URL}`
+      `\n\n${CAMPUS_MAP}`
     );
   }
   // 괄호 안이 한 단어면 별칭으로도 찾는다 ("글로세움(서점)" → "서점")
@@ -123,7 +124,7 @@ export function campusAnswer(message: string): string | null {
   const f = FACILITIES.find((f) => m.includes(key(f.item)))
     ?? FACILITIES.find((f) => alias(f.item) && m.includes(norm(alias(f.item)!)));
   if (f) {
-    return `📍 ${f.item}: ${f.building.name} ${f.floor}\n${f.building.route}\n\n🗺 캠퍼스 지도: ${CAMPUS_MAP_URL}`;
+    return `📍 ${f.item}: ${f.building.name} ${f.floor}\n${f.building.route}\n\n${CAMPUS_MAP}`;
   }
   return null;
 }
@@ -133,6 +134,6 @@ export function campusOverview(): string {
     "🏫 캠퍼스 건물 안내\n" +
     BUILDINGS.map((b) => `• ${b.name}: ${b.route.split(".")[0]}`).join("\n") +
     "\n\n건물 번호(예: 3호관)나 시설 이름(예: 보건실)으로 물어보면 자세히 알려줄게요!" +
-    `\n🗺 캠퍼스 지도: ${CAMPUS_MAP_URL}`
+    `\n${CAMPUS_MAP}`
   );
 }

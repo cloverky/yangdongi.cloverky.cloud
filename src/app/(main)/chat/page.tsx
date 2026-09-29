@@ -38,6 +38,19 @@ function groupLogs(logs: Log[]) {
   return days;
 }
 
+/** 답변 속 [[campus-map]] 표시를 캠퍼스 지도 이미지로 바꿔 그린다 (src/lib/campus.ts). */
+function MsgText({ text }: { text: string }) {
+  if (!text.includes("[[campus-map]]")) return <>{text}</>;
+  return (
+    <>
+      {text.replace("[[campus-map]]", "").trimEnd()}
+      <a href="/image/campus-map.png" target="_blank" rel="noreferrer" style={{ display:"block", marginTop:"10px" }}>
+        <Image src="/image/campus-map.png" alt="캠퍼스 지도" width={1057} height={478} style={{ width:"100%", height:"auto", borderRadius:"10px", background:"#fff" }} />
+      </a>
+    </>
+  );
+}
+
 export default function ChatPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -265,7 +278,7 @@ export default function ChatPage() {
                               color: l.speaker==="user" ? "#fff" : "#1f2a37",
                               fontSize:"14px", lineHeight:"1.55", whiteSpace:"pre-wrap", wordBreak:"keep-all",
                             }}>
-                              {l.message}
+                              <MsgText text={l.message} />
                             </div>
                           </div>
                         ))}
@@ -288,7 +301,7 @@ export default function ChatPage() {
                     color: m.role==="user" ? "#fff" : "#1f2a37",
                     fontSize:"14px", lineHeight:"1.55", whiteSpace:"pre-wrap", wordBreak:"keep-all",
                   }}>
-                    {m.text}
+                    <MsgText text={m.text} />
                   </div>
                 </div>
               ))}
