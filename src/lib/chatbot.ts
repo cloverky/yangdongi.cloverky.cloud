@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { campusAnswer, campusOverview } from "./campus";
 
 const KEYWORDS: Record<string, string[]> = {
   greeting:    ["안녕", "hello", "hi", "하이", "반가", "ㅎㅇ", "ㅎㅎ", "헬로"],
@@ -7,7 +8,7 @@ const KEYWORDS: Record<string, string[]> = {
   cert:        ["자격증", "토익", "토플", "컴활", "한국사", "접수", "원서"],
   notices:     ["공지", "알림", "소식", "게시", "안내"],
   assignments: ["과제", "숙제", "마감", "제출"],
-  campus:      ["캠퍼스", "건물", "위치", "시설", "장소", "어디"],
+  campus:      ["캠퍼스", "건물", "위치", "시설", "장소", "어디", "가는길", "가는 길", "찾아가"],
   departments: ["학과", "전공", "학부", "교수", "커리큘럼", "교육과정"],
   intro:       ["누구", "소개", "이름"],
 };
@@ -46,6 +47,10 @@ const FALLBACK =
   "시간표, 성적, 공지사항, 과제, 캠퍼스 시설, 학과 정보를 물어보세요!";
 
 export async function chat(message: string, studentId?: string): Promise<string> {
+  // 건물·시설 이름이 나오면 다른 키워드보다 우선 ("컴퓨터공학부사무실"이 학과로 빠지지 않게)
+  const place = campusAnswer(message);
+  if (place) return place;
+
   const category = match(message);
   if (!category) return FALLBACK;
 
@@ -123,14 +128,8 @@ export async function chat(message: string, studentId?: string): Promise<string>
       );
     }
 
-    case "campus": {
-      const rows = await prisma.campusPlace.findMany({ take: 15 });
-      if (!rows.length) return "캠퍼스 시설 정보가 없어요.";
-      return (
-        "🏫 캠퍼스 주요 시설\n" +
-        rows.map((r) => `• ${r.name}${r.building ? ` (${r.building}${r.floor ? " " + r.floor + "층" : ""})` : ""}`).join("\n")
-      );
-    }
+    case "campus":
+      return campusOverview();
 
     case "departments": {
       const rows = await prisma.department.findMany({ include: { faculty: true } });
