@@ -199,10 +199,11 @@ export default function ChatPage() {
           {view === "home" && (
             // 인사말은 입력창(top: HOME_BAR_TOP) 바로 위, 칩은 바로 아래에 오도록 여백을 맞춘다
             <div style={{ maxWidth:"760px", margin:"0 auto", display:"flex", flexDirection:"column", alignItems:"center" }}>
-              <div style={{ marginTop:`calc(${HOME_BAR_TOP} - 96px - 90px)`, display:"flex", alignItems:"center", gap:"14px" }}>
-                {/* png 여백이 커서 크게 두고 음수 마진으로 자리만 맞춘다 */}
-                <Image src="/image/yangdongi.png" alt="" width={96} height={96} style={{ objectFit:"contain", margin:"-18px -14px -18px 0" }} />
-                <span style={{ fontSize:"32px", fontWeight:500, color:"#1f2a37", letterSpacing:"-0.5px", whiteSpace:"nowrap" }}>안녕! 난 양동이야. 어떤 점이 궁금해?</span>
+              {/* 문구를 입력창 가운데에 맞추고, 캐릭터는 문구 왼쪽에 붙여 둔다 (가운데 정렬 계산에서 빠지게) */}
+              <div style={{ marginTop:`calc(${HOME_BAR_TOP} - 96px - 90px)`, position:"relative" }}>
+                <Image src="/image/yangdongi.png" alt="" width={96} height={96}
+                  style={{ objectFit:"contain", position:"absolute", right:"100%", top:"50%", transform:"translateY(-50%)", marginRight:"-6px" }} />
+                <span style={{ fontFamily:"'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif", fontSize:"30px", fontWeight:600, color:"#1f2a37", letterSpacing:"-0.6px", whiteSpace:"nowrap" }}>안녕! 난 양동이야. 어떤 점이 궁금해?</span>
               </div>
               <div style={{ marginTop:`${BAR_H + 56}px`, display:"flex", flexWrap:"wrap", justifyContent:"center", gap:"8px" }}>
                 {TILES.map(t => (
