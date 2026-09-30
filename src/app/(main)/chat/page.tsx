@@ -281,8 +281,15 @@ export default function ChatPage() {
                           <span style={{ color:"#9aa4b2", fontSize:"12px", transform: open ? "rotate(180deg)" : "none", transition:"transform .15s" }}>▾</span>
                         </div>
                         {open && <div style={{ display:"flex", flexDirection:"column", gap:"8px", padding:"4px 18px 18px", borderTop:"1px solid #eef1f7", paddingTop:"14px" }}>
-                        {day.map(l => (
-                          <div key={l.id} style={{ display:"flex", justifyContent: l.speaker==="user"?"flex-end":"flex-start" }}>
+                        {day.map((l, i) => (
+                          <div key={l.id} style={{ display:"flex", alignItems:"center", gap:"6px", justifyContent: l.speaker==="user"?"flex-end":"flex-start", marginTop: l.speaker==="user" && i > 0 ? "8px" : 0 }}>
+                            {/* 질문 옆 삭제 = 질문 + 바로 뒤 답변 */}
+                            {l.speaker === "user" && (
+                              <button onClick={() => deleteLogs(day[i+1]?.speaker === "bot" ? [l.id, day[i+1].id] : [l.id])} title="이 질문과 답변 삭제"
+                                style={{ width:"26px", height:"26px", border:"none", borderRadius:"8px", background:"transparent", color:"#9aa4b2", cursor:"pointer", fontSize:"12px" }}
+                                onMouseOver={e => { e.currentTarget.style.background="#fdecec"; }}
+                                onMouseOut={e => { e.currentTarget.style.background="transparent"; }}>🗑</button>
+                            )}
                             <div style={{
                               maxWidth:"72%", padding:"10px 16px",
                               borderRadius: l.speaker==="user"?"18px 18px 2px 18px":"18px 18px 18px 2px",
