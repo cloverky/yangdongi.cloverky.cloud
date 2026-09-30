@@ -67,6 +67,25 @@ export default function ChatPage() {
   const [logs, setLogs] = useState<Log[] | null>(null);
   const [openDays, setOpenDays] = useState<Set<number>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [listening, setListening] = useState(false);
+  const recogRef = useRef<{ stop(): void } | null>(null);
+
+  // 브라우저 내장 음성 인식(Web Speech API) — 크롬·엣지·사파리 지원, 파이어폭스 미지원
+  function toggleMic() {
+    if (listening) { recogRef.current?.stop(); return; }
+    const w = window as unknown as Record<string, new () => any>;
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (!SR) { alert("이 브라우저는 음성 입력을 지원하지 않아요. 크롬에서 사용해 주세요."); return; }
+    const r = new SR();
+    r.lang = "ko-KR";
+    r.interimResults = true;
+    r.onresult = (e: any) => setInput(Array.from(e.results as ArrayLike<any>).map(x => x[0].transcript).join(""));
+    r.onend = () => setListening(false);
+    r.onerror = (e: any) => { setListening(false); if (e.error === "not-allowed") alert("마이크 권한을 허용해 주세요."); };
+    r.start();
+    recogRef.current = r;
+    setListening(true);
+  }
 
   useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:"smooth" }); }, [msgs]);
@@ -352,7 +371,15 @@ export default function ChatPage() {
             ))}
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
-            <button style={{ width:"34px", height:"34px", border:"none", borderRadius:"8px", background:"transparent", cursor:"pointer", fontSize:"15px" }}>🎙</button>
+            <button onClick={toggleMic} title={listening ? "음성 입력 끄기" : "음성으로 입력"}
+              style={{ width:"34px", height:"34px", border:"none", borderRadius:"10px", cursor:"pointer", display:"grid", placeItems:"center",
+                background: listening ? "#fdecec" : "transparent", color: listening ? "#e5484d" : "#4b5563", transition:"background .15s" }}
+              onMouseOver={e => { if (!listening) e.currentTarget.style.background="#f3f5f9"; }}
+              onMouseOut={e => { if (!listening) e.currentTarget.style.background="transparent"; }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0" /><path d="M12 18v3" />
+              </svg>
+            </button>
             <button onClick={() => send()} disabled={!input.trim() || loading}
               style={{ width:"34px", height:"34px", border:"none", borderRadius:"10px", background: input.trim() ? "#1565d8" : "#c9d3e3", color:"#fff", cursor: input.trim() ? "pointer" : "default", fontSize:"15px", display:"grid", placeItems:"center", transition:"background .15s" }}>➜</button>
           </div>
