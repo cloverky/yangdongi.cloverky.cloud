@@ -204,11 +204,12 @@ export default function ChatPage() {
           {view === "home" && (
             // 인사말은 입력창(top: HOME_BAR_TOP) 바로 위, 칩은 바로 아래에 오도록 여백을 맞춘다
             <div style={{ maxWidth:"760px", margin:"0 auto", display:"flex", flexDirection:"column", alignItems:"center" }}>
-              <div style={{ marginTop:`calc(${HOME_BAR_TOP} - 96px - 90px)`, display:"flex", alignItems:"center", gap:"14px" }}>
+              <div style={{ marginTop:`calc(${HOME_BAR_TOP} - 96px - 118px)`, display:"flex", alignItems:"center", gap:"14px" }}>
                 {/* png 여백이 커서 크게 두고 음수 마진으로 자리만 맞춘다 */}
                 <Image src="/image/yangdongi.png" alt="" width={96} height={96} style={{ objectFit:"contain", margin:"-18px -14px -18px 0" }} />
                 <span style={{ fontSize:"34px", fontWeight:500, color:"#1f2a37", letterSpacing:"-0.5px" }}>{greeting}</span>
               </div>
+              <div style={{ marginTop:"6px", fontSize:"16px", color:"#6b7280" }}>안녕! 난 양동이야. 어떤 점이 궁금해?</div>
               <div style={{ marginTop:`${BAR_H + 56}px`, display:"flex", flexWrap:"wrap", justifyContent:"center", gap:"8px" }}>
                 {TILES.map(t => (
                   <button key={t.key} onClick={() => send(`${t.label} 알려줘`)} title={t.sub}
@@ -344,7 +345,7 @@ export default function ChatPage() {
         <input
           value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && !e.nativeEvent.isComposing && send()}
-          placeholder="안녕! 난 양동이야. 어떤 점이 궁금해?"
+          placeholder="양동이에게 물어보세요"
           style={{ width:"100%", border:"none", outline:"none", background:"transparent", color:"#1f2a37", fontSize:"15px" }}
         />
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
