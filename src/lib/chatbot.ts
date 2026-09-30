@@ -23,6 +23,9 @@ function match(message: string): string | null {
 
 const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
 
+// "이번 학기" 기준. 실제 날짜가 아니라 데이터가 있는 마지막 학기로 고정 (scripts/seed-timetable.js)
+const CURRENT_TERM = { year: 2025, semester: 2 };
+
 /** 서버(Vercel)는 UTC 라서 "오늘"을 한국 날짜로 맞춰 계산한다. */
 function kstDay(offsetDays: number): string {
   const kst = new Date(Date.now() + 9 * 3600_000 + offsetDays * 86400_000);
@@ -62,7 +65,7 @@ export async function chat(message: string, studentId?: string): Promise<string>
     case "timetable": {
       if (!studentId) return "시간표 조회는 로그인 후 이용할 수 있어요.";
       const rows = await prisma.studentClass.findMany({
-        where: { studentId, year: new Date().getFullYear() },
+        where: { studentId, ...CURRENT_TERM },
         include: { class: true },
       });
       if (!rows.length) return "등록된 수업이 없어요.";
@@ -74,6 +77,9 @@ export async function chat(message: string, studentId?: string): Promise<string>
         filtered = rows.filter(r => days.some((d) => r.class.schedule.startsWith(d)));
         if (!filtered.length) return `${days.join("·")}요일에는 수업이 없어요.`;
       }
+      // 월→금, 같은 요일은 시간순. 요일 없는(온라인) 과목은 맨 뒤
+      const dayIdx = (s: string) => { const i = WEEK.indexOf(s[0]); return i < 0 ? 9 : i; };
+      filtered.sort((a, b) => dayIdx(a.class.schedule) - dayIdx(b.class.schedule) || a.class.schedule.localeCompare(b.class.schedule));
 
       const label = days.length ? `${days.join("·")}요일 수업` : "이번 학기 시간표";
       return (
