@@ -108,11 +108,6 @@ export default function ChatPage() {
   const user = session?.user as { name?: string; uid?: string; department?: string; role?: string } | undefined;
   const todayStr = new Date().toLocaleDateString("ko-KR", { year:"numeric", month:"long", day:"numeric", weekday:"short" });
   const sbW = sidebarOpen ? 260 : 0;
-  // "박소연" → "소연님" (세 글자 이상이면 성을 뗀다)
-  const firstName = user?.name ? (user.name.length >= 3 ? user.name.slice(1) : user.name) : "";
-  const hour = new Date().getHours();
-  const greeting = `${firstName ? `${firstName}님, ` : ""}좋은 ${hour < 12 ? "아침이에요" : hour < 18 ? "오후예요" : "저녁이에요"}`;
-
   return (
     <div style={{ display:"flex", height:"100vh", fontFamily:"'Pretendard','Noto Sans KR',sans-serif", background:"#f3f6fb", overflow:"hidden" }}>
 
@@ -204,12 +199,11 @@ export default function ChatPage() {
           {view === "home" && (
             // 인사말은 입력창(top: HOME_BAR_TOP) 바로 위, 칩은 바로 아래에 오도록 여백을 맞춘다
             <div style={{ maxWidth:"760px", margin:"0 auto", display:"flex", flexDirection:"column", alignItems:"center" }}>
-              <div style={{ marginTop:`calc(${HOME_BAR_TOP} - 96px - 118px)`, display:"flex", alignItems:"center", gap:"14px" }}>
+              <div style={{ marginTop:`calc(${HOME_BAR_TOP} - 96px - 90px)`, display:"flex", alignItems:"center", gap:"14px" }}>
                 {/* png 여백이 커서 크게 두고 음수 마진으로 자리만 맞춘다 */}
                 <Image src="/image/yangdongi.png" alt="" width={96} height={96} style={{ objectFit:"contain", margin:"-18px -14px -18px 0" }} />
-                <span style={{ fontSize:"34px", fontWeight:500, color:"#1f2a37", letterSpacing:"-0.5px" }}>{greeting}</span>
+                <span style={{ fontSize:"32px", fontWeight:500, color:"#1f2a37", letterSpacing:"-0.5px", whiteSpace:"nowrap" }}>안녕! 난 양동이야. 어떤 점이 궁금해?</span>
               </div>
-              <div style={{ marginTop:"6px", fontSize:"16px", color:"#6b7280" }}>안녕! 난 양동이야. 어떤 점이 궁금해?</div>
               <div style={{ marginTop:`${BAR_H + 56}px`, display:"flex", flexWrap:"wrap", justifyContent:"center", gap:"8px" }}>
                 {TILES.map(t => (
                   <button key={t.key} onClick={() => send(`${t.label} 알려줘`)} title={t.sub}
