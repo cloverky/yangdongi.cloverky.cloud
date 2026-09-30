@@ -25,18 +25,21 @@ const SB_ITEMS = [
 
 interface Log { id: number; message: string; speaker: "user"|"bot"; createdAt: string; }
 
-/** 날짜별로 묶고, 질문 + 뒤따르는 답변을 한 쌍으로 묶는다. */
-function groupLogs(logs: Log[]) {
-  const days: { day: string; pairs: Log[][] }[] = [];
+/** 질문 + 뒤따르는 답변을 한 쌍으로 묶어 최신순으로 돌려준다. */
+function toPairs(logs: Log[]) {
+  const pairs: Log[][] = [];
   for (const l of logs) {
-    const day = new Date(l.createdAt).toLocaleDateString("ko-KR", { month:"long", day:"numeric", weekday:"short" });
-    if (days.at(-1)?.day !== day) days.push({ day, pairs: [] });
-    const pairs = days.at(-1)!.pairs;
-    if (l.speaker === "bot" && pairs.at(-1)?.length === 1 && pairs.at(-1)![0].speaker === "user") pairs.at(-1)!.push(l);
+    const last = pairs.at(-1);
+    if (l.speaker === "bot" && last?.length === 1 && last[0].speaker === "user") last.push(l);
     else pairs.push([l]);
   }
-  return days;
+  return pairs.reverse();
 }
+
+const fmtTime = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("ko-KR", { month:"long", day:"numeric", weekday:"short" })} ${d.toLocaleTimeString("ko-KR", { hour:"2-digit", minute:"2-digit", hour12:false })}`;
+};
 
 /** 답변 속 [[campus-map]] 표시를 캠퍼스 지도 이미지로 바꿔 그린다 (src/lib/campus.ts). */
 function MsgText({ text }: { text: string }) {
@@ -262,27 +265,25 @@ export default function ChatPage() {
               <div style={{ fontWeight:700, fontSize:"18px", color:"#1f2a37", marginBottom:"8px" }}>지난 7일 대화</div>
               {!logs ? <div style={{ color:"#6b7280", fontSize:"14px" }}>불러오는 중...</div>
                 : !logs.length ? <div style={{ color:"#6b7280", fontSize:"14px" }}>최근 7일간 대화가 없어요.</div>
-                : groupLogs(logs).map(({ day, pairs }) => (
-                  <div key={day}>
-                    <div style={{ display:"flex", alignItems:"center", gap:"8px", color:"#6b7280", fontSize:"12px", margin:"14px 0 6px" }}>
-                      {day}
-                      <button onClick={() => deleteLogs(pairs.flat().map(l => l.id))} style={{ border:"none", background:"none", color:"#d33", fontSize:"12px", cursor:"pointer" }}>이 날 삭제</button>
-                    </div>
-                    {pairs.map(pair => {
+                : toPairs(logs).map(pair => {
                       const open = openPairs.has(pair[0].id);
+                      const answer = pair.find(l => l.speaker === "bot")?.message.replace("[[campus-map]]", "").split("\n")[0];
                       return (
-                      <div key={pair[0].id} style={{ background: open ? "#fff" : "transparent", borderRadius:"12px", marginBottom:"2px" }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
-                          <button onClick={() => setOpenPairs(prev => { const s = new Set(prev); if (open) s.delete(pair[0].id); else s.add(pair[0].id); return s; })}
-                            style={{ flex:1, minWidth:0, display:"flex", alignItems:"center", gap:"10px", padding:"10px 12px", border:"none", background:"none", cursor:"pointer", textAlign:"left", borderRadius:"12px", fontSize:"14px", color:"#1f2a37" }}
-                            onMouseOver={e => { if (!open) e.currentTarget.style.background="#e9eef8"; }}
-                            onMouseOut={e => { e.currentTarget.style.background="none"; }}>
-                            <span style={{ color:"#9aa4b2", fontSize:"10px", width:"10px" }}>{open ? "▼" : "○"}</span>
-                            <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{pair[0].message}</span>
-                          </button>
-                          <button onClick={() => deleteLogs(pair.map(l => l.id))} title="이 대화 삭제" style={{ width:"28px", height:"28px", flexShrink:0, border:"none", borderRadius:"8px", background:"#eef1f7", cursor:"pointer", fontSize:"13px" }}>🗑</button>
+                      <div key={pair[0].id} style={{ background:"#fff", borderRadius:"16px", border:"1px solid #e6ebf3", boxShadow: open ? "0 8px 24px rgba(23,57,132,.08)" : "0 1px 2px rgba(0,0,0,.03)", transition:"box-shadow .15s" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:"12px", padding:"16px 18px", cursor:"pointer" }}
+                          onClick={() => setOpenPairs(prev => { const s = new Set(prev); if (open) s.delete(pair[0].id); else s.add(pair[0].id); return s; })}>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontWeight:600, fontSize:"15px", color:"#1f2a37", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{pair[0].message}</div>
+                            {!open && answer && <div style={{ fontSize:"13px", color:"#8a94a6", marginTop:"4px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{answer}</div>}
+                          </div>
+                          <span style={{ fontSize:"12px", color:"#9aa4b2", whiteSpace:"nowrap" }}>{fmtTime(pair[0].createdAt)}</span>
+                          <button onClick={e => { e.stopPropagation(); deleteLogs(pair.map(l => l.id)); }} title="이 대화 삭제"
+                            style={{ width:"30px", height:"30px", flexShrink:0, border:"none", borderRadius:"8px", background:"transparent", color:"#9aa4b2", cursor:"pointer", fontSize:"14px" }}
+                            onMouseOver={e => { e.currentTarget.style.background="#fdecec"; }}
+                            onMouseOut={e => { e.currentTarget.style.background="transparent"; }}>🗑</button>
+                          <span style={{ color:"#9aa4b2", fontSize:"12px", transform: open ? "rotate(180deg)" : "none", transition:"transform .15s" }}>▾</span>
                         </div>
-                        {open && <div style={{ display:"flex", flexDirection:"column", gap:"6px", padding:"4px 12px 14px" }}>
+                        {open && <div style={{ display:"flex", flexDirection:"column", gap:"8px", padding:"4px 18px 18px", borderTop:"1px solid #eef1f7", paddingTop:"14px" }}>
                         {pair.map(l => (
                           <div key={l.id} style={{ display:"flex", justifyContent: l.speaker==="user"?"flex-end":"flex-start" }}>
                             <div style={{
@@ -300,8 +301,6 @@ export default function ChatPage() {
                       </div>
                       );
                     })}
-                  </div>
-                ))}
             </div>
           )}
 
