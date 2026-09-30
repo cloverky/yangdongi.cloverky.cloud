@@ -23,6 +23,18 @@ const SB_ITEMS = [
   { icon:"⚙️", label:"설정",      key:"settings" },
 ];
 
+// 키워드 챗봇이라 물어보는 법을 보여준다 (src/lib/chatbot.ts 키워드와 맞출 것)
+const EXAMPLES = [
+  "오늘 수업 뭐야?",
+  "화요일 시간표 알려줘",
+  "내 학점 알려줘",
+  "보건실 어디야?",
+  "3호관 가는 길 알려줘",
+  "최근 공지사항 알려줘",
+  "마감 임박한 과제 있어?",
+  "자격증 시험 일정 알려줘",
+];
+
 const BAR_H = 104;              // 입력창 높이(px)
 const HOME_BAR_TOP = "40vh";    // 홈 화면에서 입력창 위쪽 위치
 
@@ -68,6 +80,7 @@ export default function ChatPage() {
   const [openDays, setOpenDays] = useState<Set<number>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
   const [listening, setListening] = useState(false);
+  const [showExamples, setShowExamples] = useState(false);
   const recogRef = useRef<{ stop(): void } | null>(null);
 
   // 브라우저 내장 음성 인식(Web Speech API) — 크롬·엣지·사파리 지원, 파이어폭스 미지원
@@ -363,12 +376,25 @@ export default function ChatPage() {
           style={{ width:"100%", border:"none", outline:"none", background:"transparent", color:"#1f2a37", fontSize:"15px" }}
         />
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div style={{ display:"flex", gap:"2px" }}>
-            {["🌐", "📘", "⚙️"].map(ic => (
-              <button key={ic} style={{ width:"34px", height:"34px", border:"none", borderRadius:"8px", background:"transparent", cursor:"pointer", fontSize:"15px" }}
-                onMouseOver={e => { e.currentTarget.style.background="#f3f5f9"; }}
-                onMouseOut={e => { e.currentTarget.style.background="transparent"; }}>{ic}</button>
-            ))}
+          <div style={{ position:"relative" }}>
+            <button onClick={() => setShowExamples(v => !v)} title="질문 예시"
+              style={{ height:"34px", padding:"0 10px", border:"none", borderRadius:"8px", background: showExamples ? "#f3f5f9" : "transparent", cursor:"pointer", fontSize:"13px", color:"#4b5563", display:"flex", alignItems:"center", gap:"6px" }}
+              onMouseOver={e => { e.currentTarget.style.background="#f3f5f9"; }}
+              onMouseOut={e => { if (!showExamples) e.currentTarget.style.background="transparent"; }}>
+              📘 질문 예시
+            </button>
+            {showExamples && (
+              // 홈에선 입력창이 화면 가운데라 위로 열면 헤더를 덮는다 → 아래로 연다
+              <div style={{ position:"absolute", ...(view === "home" ? { top:"calc(100% + 12px)" } : { bottom:"calc(100% + 12px)" }), left:0, width:"280px", background:"#fff", border:"1px solid #e3e7ee", borderRadius:"14px", boxShadow:"0 10px 30px rgba(31,42,55,.12)", padding:"8px" }}>
+                <div style={{ fontSize:"12px", color:"#9aa4b2", padding:"6px 10px" }}>이런 걸 물어볼 수 있어요</div>
+                {EXAMPLES.map(q => (
+                  <button key={q} onClick={() => { setInput(q); setShowExamples(false); }}
+                    style={{ display:"block", width:"100%", textAlign:"left", padding:"9px 10px", border:"none", borderRadius:"8px", background:"transparent", cursor:"pointer", fontSize:"14px", color:"#1f2a37" }}
+                    onMouseOver={e => { e.currentTarget.style.background="#f3f5f9"; }}
+                    onMouseOut={e => { e.currentTarget.style.background="transparent"; }}>{q}</button>
+                ))}
+              </div>
+            )}
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
             <button onClick={toggleMic} title={listening ? "음성 입력 끄기" : "음성으로 입력"}
