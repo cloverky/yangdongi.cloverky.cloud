@@ -62,6 +62,7 @@ export default function ChatPage() {
   const [activeKey, setActiveKey] = useState("today");
   const [profile, setProfile] = useState<[string, string][] | null>(null);
   const [logs, setLogs] = useState<Log[] | null>(null);
+  const [openPairs, setOpenPairs] = useState<Set<number>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
@@ -263,12 +264,25 @@ export default function ChatPage() {
                 : !logs.length ? <div style={{ color:"#6b7280", fontSize:"14px" }}>최근 7일간 대화가 없어요.</div>
                 : groupLogs(logs).map(({ day, pairs }) => (
                   <div key={day}>
-                    <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:"8px", color:"#6b7280", fontSize:"12px", margin:"14px 0 6px" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:"8px", color:"#6b7280", fontSize:"12px", margin:"14px 0 6px" }}>
                       {day}
                       <button onClick={() => deleteLogs(pairs.flat().map(l => l.id))} style={{ border:"none", background:"none", color:"#d33", fontSize:"12px", cursor:"pointer" }}>이 날 삭제</button>
                     </div>
-                    {pairs.map(pair => (
-                      <div key={pair[0].id} style={{ position:"relative", display:"flex", flexDirection:"column", gap:"6px", padding:"8px 36px 8px 0", borderRadius:"12px" }}>
+                    {pairs.map(pair => {
+                      const open = openPairs.has(pair[0].id);
+                      return (
+                      <div key={pair[0].id} style={{ background: open ? "#fff" : "transparent", borderRadius:"12px", marginBottom:"2px" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+                          <button onClick={() => setOpenPairs(prev => { const s = new Set(prev); if (open) s.delete(pair[0].id); else s.add(pair[0].id); return s; })}
+                            style={{ flex:1, minWidth:0, display:"flex", alignItems:"center", gap:"10px", padding:"10px 12px", border:"none", background:"none", cursor:"pointer", textAlign:"left", borderRadius:"12px", fontSize:"14px", color:"#1f2a37" }}
+                            onMouseOver={e => { if (!open) e.currentTarget.style.background="#e9eef8"; }}
+                            onMouseOut={e => { e.currentTarget.style.background="none"; }}>
+                            <span style={{ color:"#9aa4b2", fontSize:"10px", width:"10px" }}>{open ? "▼" : "○"}</span>
+                            <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{pair[0].message}</span>
+                          </button>
+                          <button onClick={() => deleteLogs(pair.map(l => l.id))} title="이 대화 삭제" style={{ width:"28px", height:"28px", flexShrink:0, border:"none", borderRadius:"8px", background:"#eef1f7", cursor:"pointer", fontSize:"13px" }}>🗑</button>
+                        </div>
+                        {open && <div style={{ display:"flex", flexDirection:"column", gap:"6px", padding:"4px 12px 14px" }}>
                         {pair.map(l => (
                           <div key={l.id} style={{ display:"flex", justifyContent: l.speaker==="user"?"flex-end":"flex-start" }}>
                             <div style={{
@@ -282,9 +296,10 @@ export default function ChatPage() {
                             </div>
                           </div>
                         ))}
-                        <button onClick={() => deleteLogs(pair.map(l => l.id))} title="이 대화 삭제" style={{ position:"absolute", right:0, top:"8px", width:"28px", height:"28px", border:"none", borderRadius:"8px", background:"#eef1f7", cursor:"pointer", fontSize:"13px" }}>🗑</button>
+                        </div>}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ))}
             </div>
