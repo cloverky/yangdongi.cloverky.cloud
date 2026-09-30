@@ -23,6 +23,9 @@ const SB_ITEMS = [
   { icon:"⚙️", label:"설정",      key:"settings" },
 ];
 
+const BAR_H = 104;              // 입력창 높이(px)
+const HOME_BAR_TOP = "40vh";    // 홈 화면에서 입력창 위쪽 위치
+
 interface Log { id: number; message: string; speaker: "user"|"bot"; createdAt: string; }
 
 const fmtDay = (iso: string) => new Date(iso).toLocaleDateString("ko-KR", { month:"long", day:"numeric", weekday:"short" });
@@ -105,6 +108,10 @@ export default function ChatPage() {
   const user = session?.user as { name?: string; uid?: string; department?: string; role?: string } | undefined;
   const todayStr = new Date().toLocaleDateString("ko-KR", { year:"numeric", month:"long", day:"numeric", weekday:"short" });
   const sbW = sidebarOpen ? 260 : 0;
+  // "박소연" → "소연님" (세 글자 이상이면 성을 뗀다)
+  const firstName = user?.name ? (user.name.length >= 3 ? user.name.slice(1) : user.name) : "";
+  const hour = new Date().getHours();
+  const greeting = `${firstName ? `${firstName}님, ` : ""}좋은 ${hour < 12 ? "아침이에요" : hour < 18 ? "오후예요" : "저녁이에요"}`;
 
   return (
     <div style={{ display:"flex", height:"100vh", fontFamily:"'Pretendard','Noto Sans KR',sans-serif", background:"#f3f6fb", overflow:"hidden" }}>
@@ -195,34 +202,22 @@ export default function ChatPage() {
         {/* 콘텐츠 */}
         <div style={{ flex:1, overflowY:"auto", padding:"32px", paddingBottom:"190px" }}>
           {view === "home" && (
-            <div style={{ display:"flex", justifyContent:"center" }}>
-              <div style={{
-                width:"min(1100px, 100%)",
-                background:"#f7faff", borderRadius:"24px",
-                boxShadow:"inset 0 10px 18px rgba(0,0,0,.03), 0 18px 40px rgba(23,57,132,.08)",
-                padding:"36px 32px"
-              }}>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"16px" }}>
-                  {TILES.map(t => (
-                    <button key={t.key} onClick={() => send(`${t.label} 알려줘`)} style={{
-                      background:"#f9fbff", borderRadius:"18px", padding:"28px 22px",
-                      boxShadow:"0 3px 0 #e3ecff inset, 0 8px 24px rgba(0,0,0,.06)",
-                      display:"flex", gap:"16px", alignItems:"center", cursor:"pointer",
-                      border:"none", outline:"none", textAlign:"left",
-                      transition:"transform .12s ease, box-shadow .12s ease"
-                    }}
-                    onMouseOver={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 10px 28px rgba(0,0,0,.1)"; }}
-                    onMouseOut={e => { e.currentTarget.style.transform=""; e.currentTarget.style.boxShadow="0 3px 0 #e3ecff inset, 0 8px 24px rgba(0,0,0,.06)"; }}>
-                      <div style={{ width:"52px", height:"52px", borderRadius:"14px", display:"grid", placeItems:"center", background:"#eef1f7", fontSize:"22px", flexShrink:0 }}>
-                        {t.icon}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight:700, fontSize:"15px", color:"#1f2a37", whiteSpace:"nowrap" }}>{t.label}</div>
-                        <div style={{ fontSize:"13px", color:"#6b7280", marginTop:"3px" }}>{t.sub}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+            // 인사말은 입력창(top: HOME_BAR_TOP) 바로 위, 칩은 바로 아래에 오도록 여백을 맞춘다
+            <div style={{ maxWidth:"760px", margin:"0 auto", display:"flex", flexDirection:"column", alignItems:"center" }}>
+              <div style={{ marginTop:`calc(${HOME_BAR_TOP} - 96px - 90px)`, display:"flex", alignItems:"center", gap:"14px" }}>
+                {/* png 여백이 커서 크게 두고 음수 마진으로 자리만 맞춘다 */}
+                <Image src="/image/yangdongi.png" alt="" width={96} height={96} style={{ objectFit:"contain", margin:"-18px -14px -18px 0" }} />
+                <span style={{ fontSize:"34px", fontWeight:500, color:"#1f2a37", letterSpacing:"-0.5px" }}>{greeting}</span>
+              </div>
+              <div style={{ marginTop:`${BAR_H + 56}px`, display:"flex", flexWrap:"wrap", justifyContent:"center", gap:"8px" }}>
+                {TILES.map(t => (
+                  <button key={t.key} onClick={() => send(`${t.label} 알려줘`)} title={t.sub}
+                    style={{ display:"flex", alignItems:"center", gap:"6px", padding:"8px 14px", borderRadius:"999px", border:"1px solid #e3e7ee", background:"#fff", color:"#374151", fontSize:"13px", cursor:"pointer", transition:"background .15s" }}
+                    onMouseOver={e => { e.currentTarget.style.background="#f3f5f9"; }}
+                    onMouseOut={e => { e.currentTarget.style.background="#fff"; }}>
+                    <span>{t.icon}</span>{t.label}
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -334,38 +329,36 @@ export default function ChatPage() {
         </div>
       </main>
 
-      {/* 양동이 캐릭터 + 입력창 (하단 고정) */}
+      {/* 입력창 — 홈에선 화면 가운데, 대화가 시작되면 하단으로 내려온다 */}
       <div style={{
-        position:"fixed", bottom:"24px",
-        left:`calc(${sbW}px + (100vw - ${sbW}px) / 2 - 120px)`,
-        // 홈에선 카드 바로 아래(바 하단이 뷰포트 위에서 ~600px)로 올려두고, 대화 시작 시 하단으로 내려옴
-        transform: view === "home" ? "translate(-50%, min(0px, calc(624px - 100vh)))" : "translate(-50%, 0)",
-        transition:"transform .4s ease",
-        display:"flex", alignItems:"flex-end", zIndex:9999, pointerEvents:"auto"
+        position:"fixed", zIndex:9999,
+        top: view === "home" ? HOME_BAR_TOP : `calc(100vh - ${BAR_H + 24}px)`,
+        left:`calc(${sbW}px + (100vw - ${sbW}px) / 2)`,
+        transform:"translateX(-50%)",
+        transition:"top .4s ease",
+        width:`min(760px, calc(100vw - ${sbW}px - 48px))`, height:`${BAR_H}px`,
+        display:"flex", flexDirection:"column", justifyContent:"space-between",
+        background:"#fff", border:"1px solid #e3e7ee", borderRadius:"20px",
+        boxShadow:"0 4px 20px rgba(31,42,55,.06)", padding:"14px 14px 10px 18px"
       }}>
-        <Image src="/image/yangdongi.png" alt="양동이" width={300} height={300}
-          style={{ objectFit:"contain", filter:"drop-shadow(0 12px 18px rgba(0,0,0,.22))", pointerEvents:"none", position:"relative", top:"10px", marginRight:"-100px" }} />
-        <div style={{
-          height:"64px", display:"grid", gridTemplateColumns:"auto 1fr auto",
-          alignItems:"center", gap:"10px",
-          background:"#3c4250", borderRadius:"28px", padding:"10px 14px",
-          boxShadow:"0 14px 30px rgba(0,0,0,.24)",
-          width:`min(780px, calc(100vw - ${sbW}px - 220px))`
-        }}>
-          <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
-            <button style={{ width:"40px", height:"40px", border:"none", outline:"none", borderRadius:"10px", background:"rgba(255,255,255,.12)", color:"#fff", cursor:"pointer", fontSize:"16px" }}>🌐</button>
-            <button style={{ width:"40px", height:"40px", border:"none", outline:"none", borderRadius:"10px", background:"rgba(255,255,255,.12)", color:"#fff", cursor:"pointer", fontSize:"16px" }}>📘</button>
-            <button style={{ width:"40px", height:"40px", border:"none", outline:"none", borderRadius:"10px", background:"rgba(255,255,255,.12)", color:"#fff", cursor:"pointer", fontSize:"16px" }}>⚙️</button>
+        <input
+          value={input} onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && !e.nativeEvent.isComposing && send()}
+          placeholder="안녕! 난 양동이야. 어떤 점이 궁금해?"
+          style={{ width:"100%", border:"none", outline:"none", background:"transparent", color:"#1f2a37", fontSize:"15px" }}
+        />
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", gap:"2px" }}>
+            {["🌐", "📘", "⚙️"].map(ic => (
+              <button key={ic} style={{ width:"34px", height:"34px", border:"none", borderRadius:"8px", background:"transparent", cursor:"pointer", fontSize:"15px" }}
+                onMouseOver={e => { e.currentTarget.style.background="#f3f5f9"; }}
+                onMouseOut={e => { e.currentTarget.style.background="transparent"; }}>{ic}</button>
+            ))}
           </div>
-          <input
-            value={input} onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && send()}
-            placeholder="안녕! 난 양동이야. 어떤 점이 궁금해?"
-            style={{ width:"100%", height:"44px", border:"none", outline:"none", background:"rgba(255,255,255,.12)", color:"#fff", borderRadius:"12px", padding:"0 14px", fontSize:"14px" }}
-          />
           <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
-            <button style={{ width:"44px", height:"44px", border:"none", outline:"none", borderRadius:"12px", background:"rgba(255,255,255,.12)", color:"#fff", cursor:"pointer", fontSize:"18px" }}>🎙</button>
-            <button onClick={() => send()} style={{ width:"44px", height:"44px", border:"none", outline:"none", borderRadius:"12px", background:"#00a2ff", color:"#fff", fontWeight:800, cursor:"pointer", fontSize:"18px", display:"grid", placeItems:"center" }}>➜</button>
+            <button style={{ width:"34px", height:"34px", border:"none", borderRadius:"8px", background:"transparent", cursor:"pointer", fontSize:"15px" }}>🎙</button>
+            <button onClick={() => send()} disabled={!input.trim() || loading}
+              style={{ width:"34px", height:"34px", border:"none", borderRadius:"10px", background: input.trim() ? "#1565d8" : "#c9d3e3", color:"#fff", cursor: input.trim() ? "pointer" : "default", fontSize:"15px", display:"grid", placeItems:"center", transition:"background .15s" }}>➜</button>
           </div>
         </div>
       </div>
