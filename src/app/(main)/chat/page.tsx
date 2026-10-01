@@ -34,6 +34,7 @@ const EXAMPLES = [
 ];
 
 const BAR_H = 104;              // 입력창 높이(px)
+const CHIPS_H = 46;             // 입력창 아래 칩 줄 높이(간격 포함)
 const HOME_BAR_TOP = "40vh";    // 홈 화면에서 입력창 위쪽 위치
 
 interface Log { id: number; message: string; speaker: "user"|"bot"; createdAt: string; }
@@ -225,25 +226,15 @@ export default function ChatPage() {
         </header>
 
         {/* 콘텐츠 */}
-        <div style={{ flex:1, overflowY:"auto", padding:"32px", paddingBottom:"190px" }}>
+        <div style={{ flex:1, overflowY:"auto", padding:"32px", paddingBottom:`${BAR_H + CHIPS_H + 48}px` }}>
           {view === "home" && (
-            // 인사말은 입력창(top: HOME_BAR_TOP) 바로 위, 칩은 바로 아래에 오도록 여백을 맞춘다
+            // 인사말은 입력창(top: HOME_BAR_TOP) 바로 위에 오도록 여백을 맞춘다
             <div style={{ maxWidth:"760px", margin:"0 auto", display:"flex", flexDirection:"column", alignItems:"center" }}>
               {/* 문구를 입력창 가운데에 맞추고, 캐릭터는 문구 왼쪽에 붙여 둔다 (가운데 정렬 계산에서 빠지게) */}
               <div style={{ marginTop:`calc(${HOME_BAR_TOP} - 96px - 90px)`, position:"relative" }}>
                 <Image src="/image/yangdongi.png" alt="" width={96} height={96}
                   style={{ objectFit:"contain", position:"absolute", right:"100%", top:"50%", transform:"translateY(-50%)", marginRight:"-6px" }} />
                 <span style={{ fontFamily:"'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif", fontSize:"30px", fontWeight:600, color:"#1f2a37", letterSpacing:"-0.6px", whiteSpace:"nowrap" }}>안녕! 난 양동이야. 어떤 점이 궁금해?</span>
-              </div>
-              <div style={{ marginTop:`${BAR_H + 56}px`, display:"flex", flexWrap:"wrap", justifyContent:"center", gap:"8px" }}>
-                {TILES.map(t => (
-                  <button key={t.key} onClick={() => "href" in t ? window.open(t.href) : send(`${t.label} 알려줘`)} title={t.sub}
-                    style={{ display:"flex", alignItems:"center", gap:"6px", padding:"8px 14px", borderRadius:"999px", border:"1px solid #e3e7ee", background:"#fff", color:"#374151", fontSize:"13px", cursor:"pointer", transition:"background .15s" }}
-                    onMouseOver={e => { e.currentTarget.style.background="#f3f5f9"; }}
-                    onMouseOut={e => { e.currentTarget.style.background="#fff"; }}>
-                    <span>{t.icon}</span>{t.label}
-                  </button>
-                ))}
               </div>
             </div>
           )}
@@ -358,7 +349,8 @@ export default function ChatPage() {
       {/* 입력창 — 홈에선 화면 가운데, 대화가 시작되면 하단으로 내려온다 */}
       <div style={{
         position:"fixed", zIndex:9999,
-        top: view === "home" ? HOME_BAR_TOP : `calc(100vh - ${BAR_H + 24}px)`,
+        // 대화 중엔 아래 붙은 칩(CHIPS_H)까지 화면 안에 들어오게 그만큼 더 올린다
+        top: view === "home" ? HOME_BAR_TOP : `calc(100vh - ${BAR_H + CHIPS_H + 16}px)`,
         left:`calc(${sbW}px + (100vw - ${sbW}px) / 2)`,
         transform:"translateX(-50%)",
         transition:"top .4s ease",
@@ -367,6 +359,17 @@ export default function ChatPage() {
         background:"#fff", border:"1px solid #e3e7ee", borderRadius:"20px",
         boxShadow:"0 4px 20px rgba(31,42,55,.06)", padding:"14px 14px 10px 18px"
       }}>
+        {/* 바로가기 칩 — 입력창에 붙어 다녀서 홈·대화 화면 어디서나 보인다 */}
+        <div style={{ position:"absolute", top:"calc(100% + 10px)", left:0, right:0, display:"flex", flexWrap:"wrap", justifyContent:"center", gap:"8px" }}>
+          {TILES.map(t => (
+            <button key={t.key} onClick={() => "href" in t ? window.open(t.href) : send(`${t.label} 알려줘`)} title={t.sub}
+              style={{ display:"flex", alignItems:"center", gap:"6px", padding:"7px 14px", borderRadius:"999px", border:"1px solid #e3e7ee", background:"#fff", color:"#374151", fontSize:"13px", cursor:"pointer", transition:"background .15s" }}
+              onMouseOver={e => { e.currentTarget.style.background="#f3f5f9"; }}
+              onMouseOut={e => { e.currentTarget.style.background="#fff"; }}>
+              <span>{t.icon}</span>{t.label}
+            </button>
+          ))}
+        </div>
         <input
           value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && !e.nativeEvent.isComposing && send()}
