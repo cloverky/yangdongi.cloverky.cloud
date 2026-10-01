@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { DEPARTMENTS } from "@/lib/departments";
 
 interface Msg { role: "user" | "bot"; text: string; }
 
@@ -53,6 +54,9 @@ const GUEST_EXAMPLES = [
 // 비회원 사이드바에서 뺄 메뉴 (내 기록·내 정보가 필요한 것)
 const MEMBER_ONLY = ["logs", "settings"];
 
+// 설정 화면 입력칸
+const fieldStyle: React.CSSProperties = { flex:1, width:"100%", height:"38px", padding:"0 12px", border:"1px solid #e3e7ee", borderRadius:"10px", fontSize:"14px", color:"#1f2a37", background:"#f7f8fb", outline:"none" };
+
 const BAR_H = 104;              // 입력창 높이(px)
 const CHIPS_H = 46;             // 입력창 아래 칩 줄 높이(간격 포함)
 const HOME_BAR_TOP = "40vh";    // 홈 화면에서 입력창 위쪽 위치
@@ -90,7 +94,7 @@ export default function ChatApp({ guest = false }: { guest?: boolean }) {
   const tiles = guest ? GUEST_TILES : TILES;
   const examples = guest ? GUEST_EXAMPLES : EXAMPLES;
   const sbItems = guest ? SB_ITEMS.filter(i => !MEMBER_ONLY.includes(i.key)) : SB_ITEMS;
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
   const [msgs, setMsgs] = useState<Msg[]>([{ role:"bot", text:"안녕! 난 양동이야. 어떤 점이 궁금해?" }]);
   const [input, setInput] = useState("");
@@ -99,6 +103,8 @@ export default function ChatApp({ guest = false }: { guest?: boolean }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeKey, setActiveKey] = useState("today");
   const [profile, setProfile] = useState<[string, string][] | null>(null);
+  const [editing, setEditing] = useState<{ name: string; department: string } | null>(null);
+  const [pw, setPw] = useState({ cur: "", next: "", next2: "" });
   const [logs, setLogs] = useState<Log[] | null>(null);
   const [openDays, setOpenDays] = useState<Set<number>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -150,6 +156,27 @@ export default function ChatApp({ guest = false }: { guest?: boolean }) {
     if (!res.ok) return alert("삭제하지 못했어요. 다시 시도해 주세요.");
     if (ids) setLogs(prev => prev?.filter(l => !ids.includes(l.id)) ?? null);
     else { setLogs(null); alert("전체 대화 기록을 삭제했어요."); }
+  }
+
+  async function patchMe(body: object): Promise<boolean> {
+    const res = await fetch("/api/me", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
+    if (res.ok) return true;
+    alert((await res.json().catch(() => ({}))).error ?? "저장하지 못했어요. 다시 시도해 주세요.");
+    return false;
+  }
+
+  async function saveProfile() {
+    if (!editing || !(await patchMe(editing))) return;
+    await update({ name: editing.name.trim(), department: editing.department });
+    setEditing(null);
+    fetch("/api/me").then(r => r.ok ? r.json() : []).then(setProfile);
+  }
+
+  async function changePassword() {
+    if (pw.next !== pw.next2) return alert("새 비밀번호가 서로 달라요.");
+    if (!(await patchMe({ currentPassword: pw.cur, newPassword: pw.next }))) return;
+    setPw({ cur: "", next: "", next2: "" });
+    alert("비밀번호를 바꿨어요.");
   }
 
   async function deleteAccount() {
@@ -276,15 +303,47 @@ export default function ChatApp({ guest = false }: { guest?: boolean }) {
           {view === "settings" && (
             <div style={{ maxWidth:"560px", margin:"0 auto", background:"#fff", borderRadius:"18px", boxShadow:"0 8px 24px rgba(0,0,0,.06)", padding:"28px 32px" }}>
               <div style={{ fontWeight:700, fontSize:"18px", color:"#1f2a37", marginBottom:"18px" }}>설정</div>
-              <div style={{ fontWeight:600, fontSize:"13px", color:"#6b7280", marginBottom:"6px" }}>내 정보</div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"6px" }}>
+                <span style={{ fontWeight:600, fontSize:"13px", color:"#6b7280" }}>내 정보</span>
+                {/* 학생 이름·학과는 학교 학적 정보라 수정 불가 */}
+                {user?.role !== "student" && profile && profile.length > 0 && !editing && (
+                  <button onClick={() => setEditing({ name: profile.find(([k]) => k === "이름")?.[1] ?? "", department: profile.find(([k]) => k === "소속")?.[1] ?? "" })}
+                    style={{ padding:"4px 10px", borderRadius:"8px", border:"1px solid #d7deea", background:"#fff", color:"#1f2a37", fontSize:"12px", cursor:"pointer" }}>수정</button>
+                )}
+              </div>
               {!profile ? <div style={{ color:"#6b7280", fontSize:"14px" }}>불러오는 중...</div>
                 : !profile.length ? <div style={{ color:"#6b7280", fontSize:"14px" }}>정보를 불러오지 못했어요.</div>
                 : profile.map(([k, v]) => (
-                  <div key={k} style={{ display:"flex", padding:"12px 0", borderTop:"1px solid #eef1f7", fontSize:"14px" }}>
-                    <span style={{ width:"110px", color:"#6b7280" }}>{k}</span>
-                    <span style={{ color:"#1f2a37", fontWeight:600 }}>{v}</span>
+                  <div key={k} style={{ display:"flex", alignItems:"center", padding:"12px 0", borderTop:"1px solid #eef1f7", fontSize:"14px", minHeight:"20px" }}>
+                    <span style={{ width:"110px", color:"#6b7280", flexShrink:0 }}>{k}</span>
+                    {editing && k === "이름" ? (
+                      <input value={editing.name} onChange={e => setEditing({ ...editing, name: e.target.value })} style={fieldStyle} />
+                    ) : editing && k === "소속" ? (
+                      <select value={editing.department} onChange={e => setEditing({ ...editing, department: e.target.value })} style={fieldStyle}>
+                        {DEPARTMENTS.map(g => (
+                          <optgroup key={g.group} label={g.group}>{g.items.map(d => <option key={d} value={d}>{d}</option>)}</optgroup>
+                        ))}
+                      </select>
+                    ) : (
+                      <span style={{ color:"#1f2a37", fontWeight:600 }}>{v}</span>
+                    )}
                   </div>
                 ))}
+              {editing && (
+                <div style={{ display:"flex", gap:"8px", justifyContent:"flex-end", marginTop:"10px" }}>
+                  <button onClick={() => setEditing(null)} style={{ padding:"8px 14px", borderRadius:"10px", border:"1px solid #d7deea", background:"#fff", color:"#1f2a37", fontSize:"13px", cursor:"pointer" }}>취소</button>
+                  <button onClick={saveProfile} style={{ padding:"8px 14px", borderRadius:"10px", border:"none", background:"#1565d8", color:"#fff", fontSize:"13px", cursor:"pointer" }}>저장</button>
+                </div>
+              )}
+
+              <div style={{ fontWeight:600, fontSize:"13px", color:"#6b7280", margin:"24px 0 10px" }}>비밀번호 변경</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+                <input type="password" placeholder="현재 비밀번호" autoComplete="current-password" value={pw.cur} onChange={e => setPw({ ...pw, cur: e.target.value })} style={fieldStyle} />
+                <input type="password" placeholder="새 비밀번호 (4자 이상)" autoComplete="new-password" value={pw.next} onChange={e => setPw({ ...pw, next: e.target.value })} style={fieldStyle} />
+                <input type="password" placeholder="새 비밀번호 확인" autoComplete="new-password" value={pw.next2} onChange={e => setPw({ ...pw, next2: e.target.value })} style={fieldStyle} />
+                <button onClick={changePassword} disabled={!pw.cur || !pw.next || !pw.next2}
+                  style={{ alignSelf:"flex-end", padding:"8px 14px", borderRadius:"10px", border:"none", background: pw.cur && pw.next && pw.next2 ? "#1565d8" : "#c9d3e3", color:"#fff", fontSize:"13px", cursor: pw.cur && pw.next && pw.next2 ? "pointer" : "default" }}>비밀번호 변경</button>
+              </div>
               <div style={{ fontWeight:600, fontSize:"13px", color:"#6b7280", margin:"24px 0 10px" }}>계정</div>
               <div style={{ display:"flex", gap:"10px" }}>
                 <button onClick={() => signOut({ callbackUrl:"/login" })} style={{ padding:"10px 16px", borderRadius:"10px", border:"1px solid #d7deea", background:"#fff", color:"#1f2a37", fontSize:"14px", cursor:"pointer" }}>
@@ -380,7 +439,8 @@ export default function ChatApp({ guest = false }: { guest?: boolean }) {
         </div>
       </main>
 
-      {/* 입력창 — 홈에선 화면 가운데, 대화가 시작되면 하단으로 내려온다 */}
+      {/* 입력창 — 홈에선 화면 가운데, 대화가 시작되면 하단으로 내려온다. 설정 화면에선 숨긴다 */}
+      {view !== "settings" && (
       <div style={{
         position:"fixed", zIndex:9999,
         // 대화 중엔 아래 붙은 칩(CHIPS_H)까지 화면 안에 들어오게 그만큼 더 올린다
@@ -446,6 +506,7 @@ export default function ChatApp({ guest = false }: { guest?: boolean }) {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

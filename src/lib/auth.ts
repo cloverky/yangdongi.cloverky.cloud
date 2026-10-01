@@ -49,10 +49,15 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.role = (user as any).role;
         token.department = (user as any).department;
+      }
+      // 설정에서 이름·소속을 바꾼 뒤 useSession().update(...) 로 사이드바에 바로 반영
+      if (trigger === "update" && session) {
+        if (session.name) token.name = session.name;
+        if (session.department !== undefined) token.department = session.department;
       }
       return token;
     },
