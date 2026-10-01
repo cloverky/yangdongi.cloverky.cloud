@@ -10,7 +10,6 @@ const TILES = [
   { key:"timetable",   icon:"📅", label:"수업 시간표",    sub:"이번 주 수업 및 강의실" },
   { key:"grades",      icon:"🎓", label:"학점 조회",      sub:"누적/학기별 성적" },
   { key:"assignments", icon:"🖥️", label:"eClass",         sub:"과제/공지 바로가기" },
-  { key:"library",     icon:"📚", label:"도서관",         sub:"대출/연장/좌석 현황" },
   { key:"graduation",  icon:"🎓", label:"졸업 학점 이수", sub:"전공/교양 이수체크" },
 ];
 
