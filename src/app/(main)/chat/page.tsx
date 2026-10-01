@@ -198,7 +198,6 @@ export default function ChatPage() {
 
         {/* 하단 사용자 정보 */}
         <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"12px", borderTop:"1px solid rgba(255,255,255,.18)", marginTop:"8px" }}>
-          <div style={{ width:"40px", height:"40px", borderRadius:"50%", background:"rgba(255,255,255,.2)", display:"grid", placeItems:"center", fontSize:"18px", flexShrink:0 }}>👤</div>
           <div style={{ flex:1, overflow:"hidden" }}>
             <div style={{ fontWeight:600, fontSize:"14px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user?.name ?? "사용자"}</div>
             <div style={{ fontSize:"12px", opacity:.85 }}>{user?.role === "student" ? "학생" : "교직원"}</div>
