@@ -8,7 +8,6 @@ interface Msg { role: "user" | "bot"; text: string; }
 
 const TILES = [
   { key:"timetable",   icon:"📅", label:"수업 시간표",    sub:"이번 주 수업 및 강의실" },
-  { key:"cert",        icon:"📋", label:"자격증 안내",    sub:"추천 자격증/시험일정" },
   { key:"grades",      icon:"🎓", label:"학점 조회",      sub:"누적/학기별 성적" },
   { key:"assignments", icon:"🖥️", label:"eClass",         sub:"과제/공지 바로가기" },
   { key:"library",     icon:"📚", label:"도서관",         sub:"대출/연장/좌석 현황" },
@@ -32,7 +31,6 @@ const EXAMPLES = [
   "3호관 가는 길 알려줘",
   "최근 공지사항 알려줘",
   "마감 임박한 과제 있어?",
-  "자격증 시험 일정 알려줘",
 ];
 
 const BAR_H = 104;              // 입력창 높이(px)

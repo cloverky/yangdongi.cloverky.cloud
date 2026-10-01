@@ -3,8 +3,6 @@ import { campusAnswer, campusOverview } from "./campus";
 
 const KEYWORDS: Record<string, string[]> = {
   greeting:    ["안녕", "hello", "hi", "하이", "반가", "ㅎㅇ", "ㅎㅎ", "헬로"],
-  // 자격증을 시간표보다 먼저: "자격증 시험 일정"의 '일정'이 시간표로 새지 않게
-  cert:        ["자격증", "토익", "토플", "컴활", "한국사", "접수", "원서"],
   timetable:   ["시간표", "수업", "강의", "스케줄", "일정"],
   grades:      ["성적", "학점", "gpa", "점수", "학업"],
   notices:     ["공지", "알림", "소식", "게시", "안내"],
@@ -103,15 +101,6 @@ export async function chat(message: string, studentId?: string): Promise<string>
       );
     }
 
-    case "cert": {
-      const rows = await prisma.notice.findMany({
-        where: { OR: [{ title: { contains: "자격증" } }, { title: { contains: "토익" } }, { title: { contains: "시험" } }, { title: { contains: "접수" } }] },
-        orderBy: { postedAt: "desc" },
-        take: 5,
-      });
-      if (!rows.length) return "자격증·시험 관련 공지가 없어요.";
-      return "📋 자격증·시험 공지\n" + rows.map((r) => `• ${r.title}`).join("\n");
-    }
 
     case "notices": {
       const rows = await prisma.notice.findMany({ orderBy: { postedAt: "desc" }, take: 5 });
