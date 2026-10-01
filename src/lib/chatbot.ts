@@ -27,6 +27,30 @@ const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
 // "이번 학기" 기준. 실제 날짜가 아니라 데이터가 있는 마지막 학기로 고정 (scripts/seed-timetable.js)
 const CURRENT_TERM = { year: 2025, semester: 2 };
 
+/**
+ * 메시지에서 학기를 읽는다. "2024년 1학기", "24년", "작년 2학기", "재작년", "지난 학기", "1학년 2학기"(grade 필요).
+ * 학기를 말하지 않으면 semester 는 비운다(그 해 전체). 아무 단서도 없으면 null.
+ */
+function termInMessage(message: string, grade?: number): { year: number; semester?: number } | null {
+  const m = message.replace(/\s/g, "");
+  if (/(지난|저번)학기/.test(m))
+    return CURRENT_TERM.semester === 2 ? { year: CURRENT_TERM.year, semester: 1 } : { year: CURRENT_TERM.year - 1, semester: 2 };
+
+  const sem = Number(m.match(/([12])학기/)?.[1]) || undefined;
+  let year: number | undefined;
+  const y = m.match(/(?:20)?(\d{2})년/);
+  if (y) year = 2000 + Number(y[1]);
+  else if (m.includes("재작년")) year = CURRENT_TERM.year - 2;
+  else if (m.includes("작년")) year = CURRENT_TERM.year - 1;
+  else if (m.includes("올해")) year = CURRENT_TERM.year;
+  else {
+    const g = Number(m.match(/([1-4])학년/)?.[1]);
+    if (g && grade) year = CURRENT_TERM.year - (grade - g);
+  }
+  if (year === undefined) return sem ? { year: CURRENT_TERM.year, semester: sem } : null;
+  return { year, semester: sem };
+}
+
 // 3년제 전문학사 졸업요건 — https://www.dongyang.ac.kr/dongyang/212/subview.do (2023년 2월 이후 졸업대상자)
 const GRAD = { total: 110, major: 78, liberal: 12, terms: 6 };
 
@@ -68,28 +92,39 @@ export async function chat(message: string, studentId?: string): Promise<string>
 
     case "timetable": {
       if (!studentId) return "시간표 조회는 로그인 후 이용할 수 있어요.";
+      const grade = /학년/.test(message)
+        ? (await prisma.student.findUnique({ where: { studentId }, select: { grade: true } }))?.grade
+        : undefined;
+      const term = termInMessage(message, grade) ?? CURRENT_TERM;
+      const termLabel = term === CURRENT_TERM ? "이번 학기" : `${term.year}년${term.semester ? ` ${term.semester}학기` : ""}`;
+
       const rows = await prisma.studentClass.findMany({
-        where: { studentId, ...CURRENT_TERM },
+        where: { studentId, year: term.year, ...(term.semester ? { semester: term.semester } : {}) },
         include: { class: true },
       });
-      if (!rows.length) return "등록된 수업이 없어요.";
+      if (!rows.length) return `${termLabel}에 등록된 수업이 없어요.`;
 
       const days = daysInMessage(message);
 
       let filtered = rows;
       if (days.length) {
         filtered = rows.filter(r => days.some((d) => r.class.schedule.startsWith(d)));
-        if (!filtered.length) return `${days.join("·")}요일에는 수업이 없어요.`;
+        if (!filtered.length) return `${termLabel} ${days.join("·")}요일에는 수업이 없어요.`;
       }
-      // 월→금, 같은 요일은 시간순. 요일 없는(온라인) 과목은 맨 뒤
+      // 학기 → 월~금 → 시간순. 요일 없는(온라인) 과목은 맨 뒤
       const dayIdx = (s: string) => { const i = WEEK.indexOf(s[0]); return i < 0 ? 9 : i; };
-      filtered.sort((a, b) => dayIdx(a.class.schedule) - dayIdx(b.class.schedule) || a.class.schedule.localeCompare(b.class.schedule));
+      filtered.sort((a, b) => a.semester - b.semester || dayIdx(a.class.schedule) - dayIdx(b.class.schedule) || a.class.schedule.localeCompare(b.class.schedule));
 
-      const label = days.length ? `${days.join("·")}요일 수업` : "이번 학기 시간표";
-      return (
-        `📅 ${label}\n` +
-        filtered.map((r) => `• ${r.class.subject} — ${r.class.professor} / ${r.class.classroom} / ${r.class.schedule}`).join("\n")
-      );
+      const line = (r: (typeof filtered)[number]) => `• ${r.class.subject} — ${r.class.professor} / ${r.class.classroom} / ${r.class.schedule}`;
+      const title = `📅 ${termLabel} ${days.length ? `${days.join("·")}요일 수업` : "시간표"}`;
+      // 연도만 물으면 1·2학기를 나눠 보여준다
+      if (!term.semester) {
+        return title + [1, 2].map((s) => {
+          const xs = filtered.filter((r) => r.semester === s);
+          return xs.length ? `\n\n[${s}학기]\n` + xs.map(line).join("\n") : "";
+        }).join("");
+      }
+      return `${title}\n` + filtered.map(line).join("\n");
     }
 
     case "graduation": {
