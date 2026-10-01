@@ -15,7 +15,7 @@ const TILES = [
 
 const SB_ITEMS = [
   { icon:"📅", label:"오늘",      key:"today" },
-  { icon:"📅", label:"지난 7일",  key:"logs" },
+  { icon:"🕘", label:"지난 7일",  key:"logs" },
   { icon:"🎓", label:"학사 일정", key:"schedule", href:"https://www.dongyang.ac.kr/dmu/4749/subview.do" },
   { icon:"📚", label:"도서관",    key:"library", href:"https://lib.dongyang.ac.kr/" },
   { icon:"⚙️", label:"설정",      key:"settings" },
