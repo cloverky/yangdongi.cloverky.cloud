@@ -13,7 +13,8 @@ const DEPARTMENTS = [
   { group: "기타", items: ["자유전공학과","교양과"] },
 ];
 
-const inputStyle = { width:"60%", height:"46px", padding:"12px 14px", marginBottom:"6px", border:"1px solid #ddd", borderRadius:"10px", fontSize:"14px", display:"block", color:"#111827", background:"#fff" };
+// 로그인 화면 입력칸과 같은 모양
+const inputStyle: React.CSSProperties = { width:"100%", height:"48px", padding:"12px 14px", marginBottom:"10px", border:"1px solid #e5e7eb", borderRadius:"10px", fontSize:"14px", display:"block", color:"#111827", background:"#f7f8fb" };
 
 export default function SignupPage() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function SignupPage() {
     const res = await fetch("/api/signup", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ uid, role, name, email, password: pw, department }) });
     const data = await res.json();
     setLoading(false);
-    if (!res.ok || !data.ok) { setErr(data.message || "회원가입에 실패했습니다."); return; }
+    if (!res.ok || !data.ok) { setErr(data.error || "회원가입에 실패했습니다."); return; }
     router.push("/login");
   }
 
@@ -49,20 +50,21 @@ export default function SignupPage() {
           <p style={{ fontSize:"18px" }}>동양미래대학교 챗봇 양동이 회원가입 페이지입니다.</p>
         </div>
 
-        <div style={{ flex:1, display:"flex", justifyContent:"flex-end", alignItems:"center", background:"#f9f9f9" }}>
-          <div style={{ marginRight:"80px" }}>
-            <h2 style={{ marginBottom:"10px" }}>정보 입력</h2>
-            <input style={inputStyle} type="text" placeholder="아이디(학번/교번)" value={form.uid} onChange={set("uid")} />
-            <select style={inputStyle as React.CSSProperties} value={form.role} onChange={set("role")}>
+        <div style={{ flex:1, display:"flex", justifyContent:"center", alignItems:"center", background:"#f9f9f9" }}>
+          {/* autoComplete: 크롬이 로그인용으로 저장한 학번·비밀번호를 가입 칸에 채우지 않게 */}
+          <div style={{ width:"340px" }}>
+            <h2 style={{ marginBottom:"20px", fontSize:"22px", fontWeight:"bold" }}>회원가입</h2>
+            <input style={inputStyle} type="text" placeholder="아이디 (학번/교번)" autoComplete="off" value={form.uid} onChange={set("uid")} />
+            <select style={inputStyle} value={form.role} onChange={set("role")}>
               <option value="">구분 선택</option>
               <option value="student">학생</option>
               <option value="faculty">교직원</option>
             </select>
-            <input style={inputStyle} type="text" placeholder="이름 (예: 홍길동)" value={form.name} onChange={set("name")} />
-            <input style={inputStyle} type="email" placeholder="학교 이메일" value={form.email} onChange={set("email")} />
-            <input style={inputStyle} type="password" placeholder="비밀번호" value={form.pw} onChange={set("pw")} />
-            <input style={inputStyle} type="password" placeholder="비밀번호 확인" value={form.pw2} onChange={set("pw2")} />
-            <select style={inputStyle as React.CSSProperties} value={form.department} onChange={set("department")}>
+            <input style={inputStyle} type="text" placeholder="이름 (예: 홍길동)" autoComplete="name" value={form.name} onChange={set("name")} />
+            <input style={inputStyle} type="email" placeholder="학교 이메일" autoComplete="email" value={form.email} onChange={set("email")} />
+            <input style={inputStyle} type="password" placeholder="비밀번호" autoComplete="new-password" value={form.pw} onChange={set("pw")} />
+            <input style={inputStyle} type="password" placeholder="비밀번호 확인" autoComplete="new-password" value={form.pw2} onChange={set("pw2")} />
+            <select style={inputStyle} value={form.department} onChange={set("department")}>
               <option value="">학과 선택</option>
               {DEPARTMENTS.map(g => (
                 <optgroup key={g.group} label={g.group}>
@@ -71,16 +73,14 @@ export default function SignupPage() {
               ))}
             </select>
             {err && <p style={{ color:"#b10017", fontSize:"13px", marginBottom:"6px" }}>{err}</p>}
-            <div style={{ display:"flex", gap:"10px", width:"60%", marginTop:"8px" }}>
-              <button onClick={submit} disabled={loading}
-                style={{ flex:1, height:"46px", border:"none", borderRadius:"8px", background:"#1E4DA1", color:"#fff", fontSize:"14px", cursor:"pointer" }}>
-                {loading ? "처리 중..." : "가입하기"}
-              </button>
-              <button onClick={() => router.push("/login")}
-                style={{ flex:1, height:"46px", border:"none", borderRadius:"8px", background:"#eef2ff", color:"#1E4DA1", fontSize:"14px", cursor:"pointer" }}>
-                로그인으로
-              </button>
-            </div>
+            <button onClick={submit} disabled={loading}
+              style={{ width:"100%", height:"48px", border:"none", borderRadius:"10px", background:"#1E4DA1", color:"#fff", fontSize:"14px", cursor:"pointer", marginTop:"8px" }}>
+              {loading ? "처리 중..." : "가입하기"}
+            </button>
+            <p style={{ marginTop:"12px", fontSize:"14px" }}>
+              이미 계정이 있으신가요?{" "}
+              <a href="/login" style={{ color:"#1E4DA1", textDecoration:"none" }}>로그인</a>으로 가기
+            </p>
           </div>
         </div>
 
