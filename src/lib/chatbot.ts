@@ -3,6 +3,8 @@ import { campusAnswer, campusOverview } from "./campus";
 
 const KEYWORDS: Record<string, string[]> = {
   greeting:    ["안녕", "hello", "hi", "하이", "반가", "ㅎㅇ", "ㅎㅎ", "헬로"],
+  // grades 보다 먼저: "졸업 학점 이수"의 '학점'이 성적으로 새지 않게
+  graduation:  ["졸업", "이수"],
   timetable:   ["시간표", "수업", "강의", "스케줄", "일정"],
   grades:      ["성적", "학점", "gpa", "점수", "학업"],
   notices:     ["공지", "알림", "소식", "게시", "안내"],
@@ -24,6 +26,9 @@ const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
 
 // "이번 학기" 기준. 실제 날짜가 아니라 데이터가 있는 마지막 학기로 고정 (scripts/seed-timetable.js)
 const CURRENT_TERM = { year: 2025, semester: 2 };
+
+// 3년제 전문학사 졸업요건 — https://www.dongyang.ac.kr/dongyang/212/subview.do (2023년 2월 이후 졸업대상자)
+const GRAD = { total: 110, major: 78, liberal: 12, terms: 6 };
 
 /** 서버(Vercel)는 UTC 라서 "오늘"을 한국 날짜로 맞춰 계산한다. */
 function kstDay(offsetDays: number): string {
@@ -84,6 +89,37 @@ export async function chat(message: string, studentId?: string): Promise<string>
       return (
         `📅 ${label}\n` +
         filtered.map((r) => `• ${r.class.subject} — ${r.class.professor} / ${r.class.classroom} / ${r.class.schedule}`).join("\n")
+      );
+    }
+
+    case "graduation": {
+      if (!studentId) return "졸업 이수 현황은 로그인 후 이용할 수 있어요.";
+      const rows = await prisma.studentClass.findMany({ where: { studentId }, include: { class: true } });
+      if (!rows.length) return "수강 내역이 없어요.";
+
+      const isCurrent = (r: (typeof rows)[number]) => r.year === CURRENT_TERM.year && r.semester === CURRENT_TERM.semester;
+      // 지난 학기 과목은 F 가 아니면 이수로 본다 (성적이 비어 있어도)
+      const done = rows.filter((r) => !isCurrent(r) && r.grade !== "F");
+      const now = rows.filter(isCurrent);
+      const sum = (xs: typeof rows, pre?: string) =>
+        xs.filter((r) => !pre || r.class.courseType.startsWith(pre)).reduce((s, r) => s + r.class.credit, 0);
+      const terms = new Set(rows.map((r) => `${r.year}-${r.semester}`)).size;
+
+      const line = (label: string, d: number, n: number, need: number) =>
+        `• ${label}: ${d} / ${need}학점${n ? ` (이번 학기 +${n})` : ""} ` +
+        (d >= need ? "✅ 충족" : d + n >= need ? "🟡 이번 학기 마치면 충족" : `⏳ ${need - d - n}학점 부족`);
+      const required = rows
+        .filter((r) => r.class.courseType === "전필" || r.class.courseType === "교필")
+        .map((r) => `${r.class.subject} ${isCurrent(r) ? "⏳" : "✅"}`);
+
+      return (
+        `🎓 졸업 이수 현황 (3년제 기준)\n` +
+        line("총 학점", sum(done), sum(now), GRAD.total) + "\n" +
+        line("전공", sum(done, "전"), sum(now, "전"), GRAD.major) + "\n" +
+        line("교양", sum(done, "교"), sum(now, "교"), GRAD.liberal) + "\n" +
+        `• 재학: ${terms}학기 / ${GRAD.terms}학기 이상 ${terms >= GRAD.terms ? "✅" : "⏳"}\n` +
+        `• 필수과목: ${required.join(", ")}\n\n` +
+        `기준: 학교 학사안내(2023년 2월 이후 졸업대상자). 정확한 판정은 학생서비스센터에서 확인하세요.`
       );
     }
 

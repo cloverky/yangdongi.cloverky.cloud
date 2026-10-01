@@ -9,7 +9,7 @@ interface Msg { role: "user" | "bot"; text: string; }
 const TILES = [
   { key:"timetable",   icon:"📅", label:"수업 시간표",    sub:"이번 주 수업 및 강의실" },
   { key:"grades",      icon:"🎓", label:"학점 조회",      sub:"누적/학기별 성적" },
-  { key:"assignments", icon:"🖥️", label:"eClass",         sub:"과제/공지 바로가기" },
+  { key:"assignments", icon:"🖥️", label:"eClass",         sub:"과제/공지 바로가기", href:"https://eclass.dongyang.ac.kr/" },
   { key:"graduation",  icon:"🎓", label:"졸업 학점 이수", sub:"전공/교양 이수체크" },
 ];
 
@@ -26,6 +26,7 @@ const EXAMPLES = [
   "오늘 수업 뭐야?",
   "화요일 시간표 알려줘",
   "내 학점 알려줘",
+  "졸업까지 몇 학점 남았어?",
   "보건실 어디야?",
   "3호관 가는 길 알려줘",
   "최근 공지사항 알려줘",
@@ -236,7 +237,7 @@ export default function ChatPage() {
               </div>
               <div style={{ marginTop:`${BAR_H + 56}px`, display:"flex", flexWrap:"wrap", justifyContent:"center", gap:"8px" }}>
                 {TILES.map(t => (
-                  <button key={t.key} onClick={() => send(`${t.label} 알려줘`)} title={t.sub}
+                  <button key={t.key} onClick={() => "href" in t ? window.open(t.href) : send(`${t.label} 알려줘`)} title={t.sub}
                     style={{ display:"flex", alignItems:"center", gap:"6px", padding:"8px 14px", borderRadius:"999px", border:"1px solid #e3e7ee", background:"#fff", color:"#374151", fontSize:"13px", cursor:"pointer", transition:"background .15s" }}
                     onMouseOver={e => { e.currentTarget.style.background="#f3f5f9"; }}
                     onMouseOut={e => { e.currentTarget.style.background="#fff"; }}>
