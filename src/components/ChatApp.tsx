@@ -55,7 +55,7 @@ const GUEST_EXAMPLES = [
 const MEMBER_ONLY = ["logs", "settings"];
 
 // 설정 화면 입력칸
-const fieldStyle: React.CSSProperties = { flex:1, width:"100%", height:"38px", padding:"0 12px", border:"1px solid #e3e7ee", borderRadius:"10px", fontSize:"14px", color:"#1f2a37", background:"#f7f8fb", outline:"none" };
+const fieldStyle: React.CSSProperties = { width:"100%", height:"44px", padding:"0 14px", boxSizing:"border-box", border:"1px solid #e3e7ee", borderRadius:"10px", fontSize:"14px", color:"#1f2a37", background:"#f7f8fb", outline:"none" };
 
 const BAR_H = 104;              // 입력창 높이(px)
 const CHIPS_H = 46;             // 입력창 아래 칩 줄 높이(간격 포함)
@@ -337,7 +337,7 @@ export default function ChatApp({ guest = false }: { guest?: boolean }) {
               )}
 
               <div style={{ fontWeight:600, fontSize:"13px", color:"#6b7280", margin:"24px 0 10px" }}>비밀번호 변경</div>
-              <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+              <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
                 <input type="password" placeholder="현재 비밀번호" autoComplete="current-password" value={pw.cur} onChange={e => setPw({ ...pw, cur: e.target.value })} style={fieldStyle} />
                 <input type="password" placeholder="새 비밀번호 (4자 이상)" autoComplete="new-password" value={pw.next} onChange={e => setPw({ ...pw, next: e.target.value })} style={fieldStyle} />
                 <input type="password" placeholder="새 비밀번호 확인" autoComplete="new-password" value={pw.next2} onChange={e => setPw({ ...pw, next2: e.target.value })} style={fieldStyle} />
