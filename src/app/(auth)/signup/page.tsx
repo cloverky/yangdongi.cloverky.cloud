@@ -3,15 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-const DEPARTMENTS = [
-  { group: "기계공학부", items: ["기계공학과","기계설계공학과"] },
-  { group: "로봇자동화공학부", items: ["자동화공학과","로봇소프트웨어과"] },
-  { group: "전기전자통신공학부", items: ["전기공학과","반도체전자공학과","정보통신공학과","소방안전관리과"] },
-  { group: "컴퓨터공학부", items: ["웹응용소프트웨어공학과","컴퓨터소프트웨어공학과","인공지능소프트웨어학과"] },
-  { group: "생활환경공학부", items: ["생명화학공학과","바이오융합공학과","건축과","실내건축디자인과","시각디자인과","AR·VR콘텐츠디자인과"] },
-  { group: "경영학부", items: ["경영학과","세무회계학과","유통마케팅학과","호텔관광학과","경영정보학과","빅데이터경영과"] },
-  { group: "기타", items: ["자유전공학과","교양과"] },
-];
+import { DEPARTMENTS } from "@/lib/departments";
 
 // 로그인 화면 입력칸과 같은 모양
 const inputStyle: React.CSSProperties = { width:"100%", height:"48px", padding:"12px 14px", marginBottom:"10px", border:"1px solid #e5e7eb", borderRadius:"10px", fontSize:"14px", display:"block", color:"#111827", background:"#f7f8fb" };

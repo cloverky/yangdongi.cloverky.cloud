@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { campusAnswer, campusOverview } from "./campus";
+import { DEPARTMENTS } from "./departments";
 
 const KEYWORDS: Record<string, string[]> = {
   greeting:    ["안녕", "hello", "hi", "하이", "반가", "ㅎㅇ", "ㅎㅎ", "헬로"],
@@ -7,7 +8,8 @@ const KEYWORDS: Record<string, string[]> = {
   graduation:  ["졸업", "이수"],
   timetable:   ["시간표", "수업", "강의", "스케줄", "일정"],
   grades:      ["성적", "학점", "gpa", "점수", "학업"],
-  notices:     ["공지", "알림", "소식", "게시", "안내"],
+  // "안내"는 빼둔다: "캠퍼스 안내"가 공지로 새던 원인
+  notices:     ["공지", "알림", "소식", "게시"],
   assignments: ["과제", "숙제", "마감", "제출"],
   campus:      ["캠퍼스", "건물", "위치", "시설", "장소", "어디", "가는길", "가는 길", "찾아가"],
   departments: ["학과", "전공", "학부", "교수", "커리큘럼", "교육과정"],
@@ -199,9 +201,9 @@ export async function chat(message: string, studentId?: string): Promise<string>
       return campusOverview();
 
     case "departments": {
-      const rows = await prisma.department.findMany({ include: { faculty: true } });
-      if (!rows.length) return "학과 정보가 없어요.";
-      return "🎓 학과 목록\n" + rows.map((r) => `• ${r.name} (${r.faculty.name})`).join("\n");
+      // DB department 테이블이 비어 있어 학부·학과 고정 목록으로 답한다
+      return "🎓 학부·학과 목록\n" + DEPARTMENTS.filter((g) => g.group !== "기타")
+        .map((g) => `• ${g.group}: ${g.items.join(", ")}`).join("\n");
     }
 
     default:
