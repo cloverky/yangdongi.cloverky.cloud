@@ -10,7 +10,7 @@ const inputStyle: React.CSSProperties = { width:"100%", height:"48px", padding:"
 
 export default function SignupPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ uid:"", role:"", name:"", email:"", pw:"", pw2:"", department:"" });
+  const [form, setForm] = useState({ uid:"", role:"", name:"", pw:"", pw2:"", department:"" });
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -19,11 +19,11 @@ export default function SignupPage() {
 
   async function submit() {
     setErr("");
-    const { uid, role, name, email, pw, pw2, department } = form;
-    if (!uid||!role||!name||!email||!pw||!pw2||!department) { setErr("필수 항목을 모두 입력해 주세요."); return; }
+    const { uid, role, name, pw, pw2, department } = form;
+    if (!uid||!role||!name||!pw||!pw2||!department) { setErr("필수 항목을 모두 입력해 주세요."); return; }
     if (pw !== pw2) { setErr("비밀번호가 일치하지 않습니다."); return; }
     setLoading(true);
-    const res = await fetch("/api/signup", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ uid, role, name, email, password: pw, department }) });
+    const res = await fetch("/api/signup", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ uid, role, name, password: pw, department }) });
     const data = await res.json();
     setLoading(false);
     if (!res.ok || !data.ok) { setErr(data.error || "회원가입에 실패했습니다."); return; }
@@ -53,7 +53,6 @@ export default function SignupPage() {
               <option value="faculty">교직원</option>
             </select>
             <input style={inputStyle} type="text" placeholder="이름 (예: 홍길동)" autoComplete="name" value={form.name} onChange={set("name")} />
-            <input style={inputStyle} type="email" placeholder="학교 이메일" autoComplete="email" value={form.email} onChange={set("email")} />
             <input style={inputStyle} type="password" placeholder="비밀번호" autoComplete="new-password" value={form.pw} onChange={set("pw")} />
             <input style={inputStyle} type="password" placeholder="비밀번호 확인" autoComplete="new-password" value={form.pw2} onChange={set("pw2")} />
             <select style={inputStyle} value={form.department} onChange={set("department")}>
